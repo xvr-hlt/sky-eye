@@ -22,6 +22,7 @@ class SegmentationDataset(torch.utils.data.Dataset):
         self.instances = self._get_instances(path)
         self.resolution = resolution
         self.augment = augment
+        super().__init__()
     
     def _get_images(self, instance):
         raise NotImplementedError
