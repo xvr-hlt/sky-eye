@@ -12,8 +12,8 @@ REQUIRES = [
     'scipy==1.3.1',
     'torch==1.2.0',
     'albumentations==0.3.3',
-    'click-7.0',
-    'tensorflow-gpu==2.0.0'
+    'click==7.0',
+    'wandb==0.8.12'
 ]
 
 setup(

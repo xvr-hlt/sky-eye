@@ -10,25 +10,13 @@ class WeightedLoss(nn.Module):
         self.loss_weights = loss_weights
     
     def forward(self, outputs, targets):
-        return sum(loss(outputs, targets)*weight for loss, weight in self.loss_weights.items())
-
-class DiceLoss(nn.Module):
-    def __init__(self, eps=1e-10):
-        super().__init__()
-        self.eps = eps
-
-    def forward(self, outputs, targets):
-        batch_size = outputs.size()[0]
-        
-        dice_target = targets.contiguous().view(batch_size, -1).float()
-        dice_output = outputs.contiguous().view(batch_size, -1)
-        intersection = torch.sum(dice_output * dice_target, dim=1)
-        union = torch.sum(dice_output, dim=1) + torch.sum(dice_target, dim=1) + self.eps
-        target_none_mask = (dice_target.sum(1) == 1).float()
-        return ((1 - (2 * intersection + self.eps) / union)*target_none_mask).mean()
+        l = 0.
+        for loss, weight in self.loss_weights.items():
+            l += loss(outputs, targets)*weight
+        return l/sum(self.loss_weights.values())
     
-class JaccardLoss(torch.nn.modules.Module):
-    def __init__(self, eps=1e-10):
+class JaccardLoss(nn.Module):
+    def __init__(self, eps=1e-6):
         super().__init__()
         self.eps = eps
 
@@ -38,62 +26,47 @@ class JaccardLoss(torch.nn.modules.Module):
         intersection = (outputs * targets).sum(axes[1:])
         cardinality = outputs.sum(axes[1:]) + targets.sum(axes[1:])
         jaccard_score = ((intersection + self.eps)/(cardinality - intersection + self.eps))
-        target_none_mask = (targets.sum(axes[1:]) == 1).float()
+        target_none_mask = (targets.sum(axes[1:]) > 0).float()
         return ((1. - jaccard_score)*target_none_mask).mean()
 
+class DiceLoss(JaccardLoss):
+    def __init__(self, eps=1e-6):
+        super().__init__(eps=eps)
 
 
-class TorchFocalLoss(nn.Module):
-    """Implementation of Focal Loss[1]_ modified from Catalyst [2]_ .
+    def forward(self, outputs, targets):
+        jaccard = 1-super().forward(outputs, targets)
+        return 1-(2 * jaccard/(1+jaccard))
 
-    Arguments
-    ---------
-    gamma : :class:`int` or :class:`float`
-        Focusing parameter. See [1]_ .
-    alpha : :class:`int` or :class:`float`
-        Normalization factor. See [1]_ .
-
-    References
-    ----------
-    .. [1] https://arxiv.org/pdf/1708.02002.pdf
-    .. [2] https://catalyst-team.github.io/catalyst/
-    """
-
-    def __init__(self, gamma=2, alpha=0.75):
+class FocalLoss(nn.Module):
+    def __init__(self, gamma = 2.0, alpha = 0.25, reduction="mean"):
         super().__init__()
         self.gamma = gamma
         self.alpha = alpha
+        self.reduction="mean"
 
-    # TODO refactor
     def forward(self, outputs, targets):
-        """Calculate the loss function between `outputs` and `targets`.
+        targets = targets.type(outputs.type())
 
-        Arguments
-        ---------
-        outputs : :class:`torch.Tensor`
-            The output tensor from a model.
-        targets : :class:`torch.Tensor`
-            The training target.
+        logpt = -F.binary_cross_entropy_with_logits(
+            outputs, targets, reduction="none"
+        )
+        pt = torch.exp(logpt)
 
-        Returns
-        -------
-        loss : :class:`torch.Variable`
-            The loss value.
-        """
-        if targets.size() != outputs.size():
-            raise ValueError(
-                f"Targets and inputs must be same size. "
-                f"Got ({targets.size()}) and ({outputs.size()})"
-            )
+        # compute the loss
+        loss = -((1 - pt).pow(self.gamma)) * logpt
 
-        max_val = (-outputs).clamp(min=0)
-        log_ = ((-max_val).exp() + (-outputs - max_val).exp()).log()
-        loss = outputs - outputs * targets + max_val + log_
+        if self.alpha is not None:
+            loss = loss * (self.alpha * targets + (1 - self.alpha) * (1 - targets))
 
-        invprobs = F.logsigmoid(-outputs * (targets * 2.0 - 1.0))
-        loss = self.alpha*(invprobs * self.gamma).exp() * loss
+        if self.reduction == "mean":
+            loss = loss.mean()
+        if self.reduction == "sum":
+            loss = loss.sum()
+        if self.reduction == "batchwise_mean":
+            loss = loss.sum(0)
 
-        return loss.sum(dim=-1).mean()
+        return loss
 
 
 def torch_lovasz_hinge(logits, labels, per_image=False, ignore=None):
@@ -328,8 +301,8 @@ loss_dict = {
     'cosineloss': nn.CosineEmbeddingLoss,
     'cosineembeddingloss': nn.CosineEmbeddingLoss,
     'lovaszhinge': torch_lovasz_hinge,
-    'focalloss': TorchFocalLoss,
-    'focal': TorchFocalLoss,
+    'focalloss': FocalLoss,
+    'focal': FocalLoss,
     'jaccard': JaccardLoss,
     'jaccardloss': JaccardLoss,
     'dice': DiceLoss,

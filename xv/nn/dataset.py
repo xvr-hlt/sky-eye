@@ -18,16 +18,13 @@ def get_mask(polygons, w, h):
     return np.array(img)
 
 class SegmentationDataset(torch.utils.data.Dataset):
-    def __init__(self, path, resolution, augment=None):
-        self.instances = self._get_instances(path)
+    def __init__(self, instances, resolution, augment=None):
+        self.instances = instances
         self.resolution = resolution
         self.augment = augment
         super().__init__()
     
     def _get_images(self, instance):
-        raise NotImplementedError
-    
-    def _get_instances(self, path):
         raise NotImplementedError
     
     def _get_masks(self, instance):
@@ -91,22 +88,23 @@ class XViewSegmentationDataset(SegmentationDataset):
         return {'buildings': buildings_mask, 'damage': damage_hm}
     
     def _augment(self, images, masks):
-        if self.augment is None:
-            return images, masks
-        mask_list = [masks['buildings']]
-        mask_list += [m for m in masks['damage']]
-        aug = self.augment(**images, masks=mask_list)
-        images = {k:aug[k] for k in images}
-        
-        bmask, *dmasks = aug['masks']
-        masks = {
-            'buildings': bmask.reshape(1,*bmask.shape),
-            'damage': np.stack(dmasks)
-        }
+        if self.augment is not None:
+            mask_list = [masks['buildings']]
+            mask_list += [m for m in masks['damage']]
+            aug = self.augment(**images, masks=mask_list)
+            images = {k:aug[k] for k in images}
+
+            bmask, *dmasks = aug['masks']
+            masks = {
+                'buildings': bmask,
+                'damage': np.stack(dmasks)
+            }
+        masks['buildings'] = masks['buildings'].reshape(1,*masks['buildings'].shape)
         
         return images, masks
     
-    def _get_instances(self, path):
+    @staticmethod
+    def get_instances(path):
         instances = []
         labels = sorted(glob(f'{path}/labels/*.json'))
         for post, pre in tqdm(zip(labels[::2], labels[1::2]), total=len(labels)//2):

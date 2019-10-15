@@ -490,7 +490,7 @@ class DenseNet(nn.Module):
 class SelimSef_SpaceNet4_ResNet34UNet(EncoderDecoder):
     def __init__(self):
         self.first_layer_stride_two = True
-        super().__init__(3, 4, 'resnet34')
+        super().__init__(1, 4, 'resnet34')
 
     def get_encoder(self, encoder, layer):
         if layer == 0:
@@ -513,7 +513,7 @@ class SelimSef_SpaceNet4_ResNet34UNet(EncoderDecoder):
 class SelimSef_SpaceNet4_DenseNet121Unet(EncoderDecoder):
     def __init__(self):
         self.first_layer_stride_two = True
-        super().__init__(3, 3, 'densenet121')
+        super().__init__(1, 3, 'densenet121')
 
     def get_encoder(self, encoder, layer):
         if layer == 0:
@@ -541,7 +541,7 @@ class SelimSef_SpaceNet4_DenseNet121Unet(EncoderDecoder):
 class SelimSef_SpaceNet4_DenseNet161Unet(EncoderDecoder):
     def __init__(self):
         self.first_layer_stride_two = True
-        super().__init__(3, 3, 'densenet161')
+        super().__init__(1, 3, 'densenet161')
 
     def get_encoder(self, encoder, layer):
         if layer == 0:

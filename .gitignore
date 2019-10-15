@@ -3,3 +3,5 @@
 *.pyc
 .ipynb_*
 *.pth
+wandb/
+*.egg-info
