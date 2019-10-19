@@ -14,6 +14,12 @@
 ### Questions
 
 - Does polygonisation help? Specifically, at the 'before' layer, we can polygonalise to smooth the predictions and them use each polygon to predict the majority-damage. This should help address some of the pixel drift also. The polygonisation isn't differentiable, so we probably can't do this end-to-end.
+    - Current theory: best approach is to polygonalise the 'pre' image and then take the majority class of all pixels – solution to satellite drift.
+   
+   
+- What's the best set up for the loss of the building damage? There are four ordinal damage classes (not damages/slightly damaged/major damage/destroyed), as well as an implicit no-building class in the "post" heatmap.
+    - How do we handle the 'no-building' case? Do we explicitly model it as an option, or just model the damage classes and mask out the loss for 
+
 
 
 ## Architecture
@@ -26,11 +32,13 @@
 - Is a single model for the before/after images better, or two separate specialised models. 
   - Pros: we can concatenate/combine the filters of before/after (maybe adding deformable conv/attentional mechanisms to account for pixel drift). Intuitively, seeing the 'before' picture helps you evaluate the extent of the damage moreso than just seeing the 'after' photo.
 - What's the best way of combining? 
+- Stuff to try: [class-context concatenation](https://github.com/PkuRainBow/OCNet.pytorch), or explicit edge categorisation in a separate CNN module (https://paperswithcode.com/paper/gated-scnn-gated-shape-cnns-for-semantic)
 
 ### Experiments
 
 - Not a lot of difference between [initialised from scratch](https://app.wandb.ai/xvr-hlt/sky-eye/runs/e41vlr5w) and [pretrained](https://app.wandb.ai/xvr-hlt/sky-eye/runs/h0v80nxd).
 - xdxd pretrained model has stability issues, `selimsef_spacenet4_densenet121unet` trains [okay](https://app.wandb.ai/xvr-hlt/sky-eye/runs/h0v80nxd) (with removing first encoder layer and head due to n_channels mismatch).
+- Biggest densenet works best – `selimsef_spacenet4_densenet121unet` and `selimsef_spacenet4_resnet...` don't seem to work as well.
 
   
   
@@ -41,5 +49,6 @@
 ### Questions
 
 - What combo of Dice/Focal/BCE/Jaccard is best?
+    - Experiments with 4x Dice, 1x Focal inconclusive (https://app.wandb.ai/xvr-hlt/sky-eye/runs/mxknx2wr?workspace=user-xvr-hlt) vs (https://app.wandb.ai/xvr-hlt/sky-eye/runs/vppciq3g?workspace=user-xvr-hlt).
 - What level of half-precision should we use?
 

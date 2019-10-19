@@ -54,12 +54,15 @@ class SegmentationDataset(torch.utils.data.Dataset):
         return len(self.instances)
 
 class XViewSegmentationDataset(SegmentationDataset):
-    DAMAGE_CLASSES = {'no-damage':0, 'minor-damage':1, 'major-damage':2, 'destroyed':3}
 
-    def __init__(self, dmg_downscale_ratio=1, *args, **kwargs):
+    DAMAGE_CLASSES = {'no-damage':0, 'minor-damage':1, 'major-damage':2, 'destroyed':3}
+    DAMAGE_CLASSES_REV = ['no-damage', 'minor-damage', 'major-damage', 'destroyed']
+    
+    def __init__(self, dmg_downscale_ratio=1, damage_scale_mode='ordinal', *args, **kwargs):
         super().__init__(*args, **kwargs)
         w,h = self.resolution
         self.dmg_resolution = w//dmg_downscale_ratio, h//dmg_downscale_ratio
+        self.damage_scale_mode = damage_scale_mode
         if self.augment:
             self.augment = copy.copy(self.augment)
             self.augment.add_targets({
@@ -99,7 +102,11 @@ class XViewSegmentationDataset(SegmentationDataset):
                 'buildings': bmask,
                 'damage': np.stack(dmasks)
             }
-        masks['buildings'] = masks['buildings'].reshape(1,*masks['buildings'].shape)
+        masks['buildings'] = masks['buildings'].reshape(1, *masks['buildings'].shape)
+        
+        if self.damage_scale_mode == "ordinal":
+            for i in reversed(range(masks['damage'].shape[0])):
+                masks['damage'][:i] = np.logical_or(masks['damage'][:i], masks['damage'][i])
         
         return images, masks
     

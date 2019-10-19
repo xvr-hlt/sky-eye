@@ -247,7 +247,7 @@ encoder_params = {
         'filters': [64, 64, 128, 256, 512],
         'decoder_filters': [64, 128, 256, 512],
         'last_upsample': 64,
-        'init_op': partial(resnet34, in_channels=4)
+        'init_op': partial(resnet34, in_channels=3)
     },
     'densenet161':
         {'filters': [96, 384, 768, 2112, 2208],
@@ -315,8 +315,8 @@ class EncoderDecoder(AbstractModel):
                                                     self.last_upsample_filters,
                                                     self.last_upsample_filters)
 
-        self.final = self.make_final_classifier(
-            self.last_upsample_filters if self.first_layer_stride_two else self.decoder_filters[0], num_classes)
+        self.final_filters = self.last_upsample_filters if self.first_layer_stride_two else self.decoder_filters[0]
+        self.final = self.make_final_classifier(self.final_filters, num_classes)
 
         self._initialize_weights()
 
@@ -326,7 +326,7 @@ class EncoderDecoder(AbstractModel):
                                              range(len(self.filters))])
 
     # noinspection PyCallingNonCallable
-    def forward(self, x):
+    def forward(self, x, apply_head=True):
         enc_results = []
         for stage in self.encoder_stages:
             x = stage(x)
@@ -341,9 +341,7 @@ class EncoderDecoder(AbstractModel):
         if self.first_layer_stride_two:
             x = self.last_upsample(x)
 
-        f = self.final(x)
-
-        return f
+        return self.final(x) if apply_head else x
 
     def get_decoder(self, layer):
         in_channels = self.filters[layer + 1] if layer + 1 == len(
