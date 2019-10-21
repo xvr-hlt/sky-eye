@@ -8,12 +8,12 @@ with open('README.md', 'r', encoding='utf-8') as f:
     readme = f.read()
 
 REQUIRES = [
-    'numpy==1.17.2',
-    'scipy==1.3.1',
-    'torch==1.2.0',
-    'albumentations==0.3.3',
-    'click==7.0',
-    'wandb==0.8.12'
+    'numpy',
+    'scipy',
+    'albumentations',
+    'click',
+    'wandb',
+    'git+https://github.com/qubvel/segmentation_models.pytorch'
 ]
 
 setup(
