@@ -18,10 +18,11 @@ def get_mask(polygons, w, h):
     return np.array(img)
 
 class SegmentationDataset(torch.utils.data.Dataset):
-    def __init__(self, instances, resolution, augment=None):
+    def __init__(self, instances, resolution, augment=None, preprocess_fn=None):
         self.instances = instances
         self.resolution = resolution
         self.augment = augment
+        self.preprocess_fn = preprocess_fn
         super().__init__()
     
     def _get_images(self, instance):
@@ -35,7 +36,11 @@ class SegmentationDataset(torch.utils.data.Dataset):
         
     def transform_image(self, image):
         image = cv2.resize(image, self.resolution)
-        image = image.astype(np.float32) / 255.
+        image = image.astype(np.float32)
+        if self.preprocess_fn:
+            image = self.preprocess_fn(image)
+        else:
+            image /= 255.
         image = image.transpose(2,0,1) # C x W x H
         return image
     
