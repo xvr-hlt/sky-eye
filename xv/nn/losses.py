@@ -33,7 +33,6 @@ class DiceLoss(JaccardLoss):
     def __init__(self, eps=1e-6):
         super().__init__(eps=eps)
 
-
     def forward(self, outputs, targets):
         jaccard = 1-super().forward(outputs, targets)
         return 1-(2 * jaccard/(1+jaccard))
