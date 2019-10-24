@@ -14,7 +14,7 @@ class WeightedLoss(nn.Module):
         for loss, weight in self.loss_weights.items():
             l += loss(outputs, targets)*weight
         return l/sum(self.loss_weights.values())
-    
+
 class JaccardLoss(nn.Module):
     def __init__(self, eps=1e-6):
         super().__init__()
@@ -42,7 +42,7 @@ class FocalLoss(nn.Module):
         super().__init__()
         self.gamma = gamma
         self.alpha = alpha
-        self.reduction="mean"
+        self.reduction = reduction
 
     def forward(self, outputs, targets):
         targets = targets.type(outputs.type())
@@ -67,14 +67,25 @@ class FocalLoss(nn.Module):
 
         return loss
 
-def dice_round(preds, trues):
-    preds = preds.float()
-    return soft_dice_loss(preds, trues)
 
+class TorchFocalLoss(nn.Module):
+    def __init__(self, gamma=2, alpha=0.75):
+        super().__init__()
+        self.gamma = gamma
+        self.alpha = alpha
+
+    def forward(self, outputs, targets):
+        max_val = (-outputs).clamp(min=0)
+        log_ = ((-max_val).exp() + (-outputs - max_val).exp()).log()
+        loss = outputs - outputs * targets + max_val + log_
+
+        invprobs = F.logsigmoid(-outputs * (targets * 2.0 - 1.0))
+        loss = self.alpha*(invprobs * self.gamma).exp() * loss
+        return loss.mean()
 
 loss_dict = {
     'bcewithlogits': nn.BCEWithLogitsLoss,
-    'focal': FocalLoss,
+    'focal': TorchFocalLoss,
     'jaccard': JaccardLoss,
     'dice': DiceLoss,
 }

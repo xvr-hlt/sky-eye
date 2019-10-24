@@ -1,7 +1,9 @@
 import torch
 from collections import defaultdict
+from tqdm import tqdm
+from apex import amp
 
-def train(model, optim, data, loss_fn, train_pre=True, train_post=True):
+def train(model, optim, data, loss_fn, pre_weight=None, post_weight=None):
     model = model.train()
     loss_sum, loss_pre_sum, loss_post_sum = 0., 0., 0.
     
@@ -9,34 +11,35 @@ def train(model, optim, data, loss_fn, train_pre=True, train_post=True):
         optim.zero_grad()        
         loss = 0.
         
-        if train_pre:
+        if pre_weight:
             pre_out = model(batch['images']['image'].to('cuda'))
             pre_targets = batch['masks']['buildings'].to('cuda')
-            loss_pre = conf.pre_weight*loss_fn(pre_out, batch['masks']['buildings'].to('cuda'))
+            loss_pre = pre_weight*loss_fn(pre_out, batch['masks']['buildings'].to('cuda'))
             loss += loss_pre
             loss_pre_sum += loss_pre
 
-        if train_post:
+        if post_weight:
             post_out = model(batch['images']['post'].to('cuda'), downscale=True)
             post_targets = batch['masks']['damage'].to('cuda')
-            loss_post = conf.post_weight*sum((loss_fn(mask_out, mask) for mask_out, mask in zip(post_out, batch['masks']['damage'].to('cuda'))))
+            loss_post = post_weight*sum((loss_fn(mask_out, mask) for mask_out, mask in zip(post_out, batch['masks']['damage'].to('cuda'))))
             loss_post /= post_out.shape[1]
             loss += loss_post
             loss_post_sum += loss_post
 
-        if train_pre and train_post:
-            loss /= (conf.pre_weight+conf.post_weight)
+        if pre_weight and post_weight:
+            loss /= (pre_weight+post_weight)
         
         with amp.scale_loss(loss, optim) as scaled_loss:
             scaled_loss.backward()
+
         optim.step()
         
         loss_sum += loss
         
     return {
         'loss':loss_sum/len(data), 
-        'loss_pre': loss_pre_sum/len(data) if train_pre else None,
-        'loss_post': loss_post_sum/len(data) if train_post else None
+        'loss_pre': loss_pre_sum/len(data) if pre_weight else None,
+        'loss_post': loss_post_sum/len(data) if post_weight else None
     }
 
 def batch_metrics(outputs, targets, threshold=0.5):
@@ -81,7 +84,7 @@ def get_metrics_for_counts(tp, fp, fn):
         'f1': 2*prec*rec/(prec+rec) if (prec+rec).sum() > 0. else 0.
     }
 
-def evaluate(model, data, loss_fn, threshold=0.5, eval_pre=True, eval_post=True):
+def evaluate(model, data, loss_fn, threshold=0.5, pre_weight=None, post_weight=None, damage_classes=None):
     model = model.eval()
     metrics = defaultdict(float)
     
@@ -92,10 +95,10 @@ def evaluate(model, data, loss_fn, threshold=0.5, eval_pre=True, eval_post=True)
         for batch in tqdm(iter(data)):
             loss = 0.
             
-            if eval_pre:
+            if pre_weight:
                 pre_out = model(batch['images']['image'].to('cuda'))
                 pre_targets = batch['masks']['buildings'].to('cuda')
-                loss_pre = conf.pre_weight*loss_fn(pre_out, pre_targets)
+                loss_pre = pre_weight*loss_fn(pre_out, pre_targets)
                 metrics['loss_pre'] += loss_pre
                 loss += loss_pre                
                 tp, fp, fn = get_tp_fp_fn(pre_out, pre_targets, threshold)
@@ -103,10 +106,10 @@ def evaluate(model, data, loss_fn, threshold=0.5, eval_pre=True, eval_post=True)
                 counts_fp['building'] += fp
                 counts_fn['building'] += fn
 
-            if eval_post:
+            if post_weight:
                 post_out = model(batch['images']['post'].to('cuda'), downscale=True)
                 post_targets = batch['masks']['damage'].to('cuda')
-                loss_post = conf.post_weight*sum((loss_fn(mask_out, mask) for mask_out, mask in zip(post_out, post_targets)))
+                loss_post = post_weight*sum((loss_fn(mask_out, mask) for mask_out, mask in zip(post_out, post_targets)))
                 metrics['loss_post'] += loss_post
                 loss += loss_post
                 macro_metrics = defaultdict(float)
@@ -116,8 +119,8 @@ def evaluate(model, data, loss_fn, threshold=0.5, eval_pre=True, eval_post=True)
                     counts_fp[f'dmg_{dmg_type}'] += fp
                     counts_fn[f'dmg_{dmg_type}'] += fn
 
-            if eval_pre and eval_post:
-                loss /= conf.pre_weight+conf.post_weight
+            if pre_weight and post_weight:
+                loss /= pre_weight+conf.post_weight
 
             metrics['loss'] += loss
         metrics = {k:v/len(data) for k, v in metrics.items()}
