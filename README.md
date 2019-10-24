@@ -42,6 +42,8 @@
 - [FPN](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/hsogqx3z?workspace=user-xvr-hlt) uses 83% memory.
 - [PSPNet](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/9lvz3chz/system) uses 78% memory.
 
+Conclusion: LinkNet has best memory/performance profile, with UNet close behind (faster, more memory).
+
 ### Pretraining
 
 - Is it better to use models pretrained for building segmentation, or roll my own using a (potentially) nicer/more specialised architecture.
@@ -61,6 +63,10 @@ Conclusion: train from scratch.
 - What combo of Dice/Focal/BCE/Jaccard is best?
     - Experiments with 4x Dice, 1x Focal inconclusive (https://app.wandb.ai/xvr-hlt/sky-eye/runs/mxknx2wr?workspace=user-xvr-hlt) vs (https://app.wandb.ai/xvr-hlt/sky-eye/runs/vppciq3g?workspace=user-xvr-hlt).
 - What level of half-precision should we use?
+
+### Half precision training
+
+- Half precision training using AMP in the default mode works best. See: [full precision](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/nf4axyr0?workspace=user-xvr-hlt) lower batch size, [half-precision (default)](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/i1op16sa?workspace=user-xvr-hlt) 82% mem@batch8, [half-precision (alternative)](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/ycet76vn?workspace=user-xvr-hlt) 86% mem@batch8, more variance.
 
 
 ## Eval hacking
