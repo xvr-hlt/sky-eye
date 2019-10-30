@@ -1,77 +1,117 @@
-# sky-eye
+# Useful approaches, practices and tools used in solving greenfield computer vision problems
 
-## Thoughts
+## The Challenge
 
-- The problem can be decomposed into
-  1. Segmenting the 'before' image, and;
-  2. Classifying each pixel of identified buildings based on the 'after' image.
-  
-- Strategy: get MVP, break problem into sub-components (building classification etc.), see which approach works best.
-- Experiments that can (probably) be run on the reduced-resolution component: broad architecture, best losses, polygonisation experiments.
-  
-## Set-up
+- In the xView2 challenge, competitors are asked to identify damaged buildings in satellite imagery following a natural disaster.
+- Two images: before and after.
+- Find building footprints using the 'before' image.
+- Classify each of those footprints into one of four damage categories based on the 'after' image.
 
-### Questions
+| Before | After |
+| --- | --- |
+| ![](img/pre.png)  | ![](img/post.png)|
 
-- Does polygonisation help? Specifically, at the 'before' layer, we can polygonalise to smooth the predictions and them use each polygon to predict the majority-damage. This should help address some of the pixel drift also. The polygonisation isn't differentiable, so we probably can't do this end-to-end.
-    - Current theory: best approach is to polygonalise the 'pre' image and then take the majority class of all pixels – solution to satellite drift.
-   
-   
-- What's the best set up for the loss of the building damage? There are four ordinal damage classes (not damages/slightly damaged/major damage/destroyed), as well as an implicit no-building class in the "post" heatmap.
-    - How do we handle the 'no-building' case? Do we explicitly model it as an option, or just model the damage classes and mask out the loss.
-
-- How do we handle images with no polygons? These are penalised heavily in the loss.
+| Description | Image |
+| --- | --- |
+|Before target|![](img/pre_target.png)|
+|After target|![](img/damage_maps.png)|
+|Alignment|![](img/alignment.png)|
 
 
-## Architecture
 
-- Stuff to try: [class-context concatenation](https://github.com/PkuRainBow/OCNet.pytorch), or explicit edge categorisation in a separate CNN module (https://paperswithcode.com/paper/gated-scnn-gated-shape-cnns-for-semantic)
+## Why this problem?
 
-### Joint models vs. dual models
+- This problem is an analytical bottleneck in disaster response, and solving it has imminent real world benefits.
+- It's feasible: there is sufficient high quality annotated data.
+- It's really interesting from a technical perspective: at first glance it seems simple, but there are a lot of potentially valid approaches.
+- It's very well supported and positioned to be implemented after the competition.
 
-- Is a single model for the before/after images better, or two separate specialised models. 
-  - Pros: we can concatenate/combine the filters of before/after (maybe adding deformable conv/attentional mechanisms to account for pixel drift). Intuitively, seeing the 'before' picture helps you evaluate the extent of the damage moreso than just seeing the 'after' photo.
-  - Cons: harder to tune the combined model.
-- What's the best way of combining?
+![](img/xview.png)
 
-### Experiments
+- Cf.: [Understanding Clouds from Satellite Images](https://www.kaggle.com/c/understanding_cloud_organization).
+    - Poor annotator agreement.
+    - Indirectly applicable.
+    - Annotation requires lots of finicky manual processing.
+    
 
-- [UNet](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/rpu0bhol/overview) vs. [LinkNet](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/n1sjxbai/overview) – Linknet looks like it performs well.
-    - Using efficientnet-b7: similar performance, but UNet seems to consume slightly more memory: [UNet](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/37g5ozbp?workspace=user-xvr-hlt) uses 90% GPU memory vs. [LinkNet](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/i1op16sa/system) at 82%, although UNet trains 30% faster.
-    - Performance seems pretty similar.
-- [FPN](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/hsogqx3z?workspace=user-xvr-hlt) uses 83% memory.
-- [PSPNet](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/9lvz3chz/system) uses 78% memory.
+## Technical challenges
 
-Conclusion: LinkNet has best memory/performance profile, with UNet close behind (faster, more memory).
+- Before/after image. 
+- Resolution: output is 1024x1024 (small batch sizes).
+- Above + metric = stability issues.
 
-### Pretraining
+## Possible approaches
 
-- Is it better to use models pretrained for building segmentation, or roll my own using a (potentially) nicer/more specialised architecture.
-  - [Pretrained models](https://solaris.readthedocs.io/en/latest/pretrained_models.html).
-  - Most of the data that the models were pretrained on is also publically available – so the only other advantage is that the architectures demonstrably work.
-- Not a lot of difference between [initialised from scratch](https://app.wandb.ai/xvr-hlt/sky-eye/runs/e41vlr5w) and [pretrained](https://app.wandb.ai/xvr-hlt/sky-eye/runs/h0v80nxd).
-- xdxd pretrained model has stability issues, `selimsef_spacenet4_densenet121unet` trains [okay](https://app.wandb.ai/xvr-hlt/sky-eye/runs/h0v80nxd) (with removing first encoder layer and head due to n_channels mismatch).
-- Biggest densenet works best – `selimsef_spacenet4_densenet121unet` and `selimsef_spacenet4_resnet...` don't seem to work as well.
-- [EfficientNet](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/rpu0bhol/overview) outperforms pretrained model.
+- Example solution: semantic segmentation and patch-classification.
+- This is in the spirit of 'R-CNN' e.g. regional cnn.
 
-Conclusion: train from scratch.
+| Semantic | Instance |
+| --- | --- |
+| ![](img/sem.png)  | ![](img/inst.png)|
 
-## Loss and training
+- Semantic segmentation: some tricks with upscaling and pooling across layers, but mostly pretty simple – encoder + decoder setup.
+- Instance segmentation: this came out of object detection (bounding boxes), and is a little crazy. 1000s of overlapping potential bounding boxes are proposed by one RoI (region-of-interest) network, before each one is pooled into a fixed size representation and classified/adjusted. Lots of post-processing required to handle the overlapping boxes, and an absurd number of hyperparams. There are much nicer solutions (e.g. [Objects as points].)
 
-### Questions
-
-- What combo of Dice/Focal/BCE/Jaccard is best?
-    - Experiments with 4x Dice, 1x Focal inconclusive (https://app.wandb.ai/xvr-hlt/sky-eye/runs/mxknx2wr?workspace=user-xvr-hlt) vs (https://app.wandb.ai/xvr-hlt/sky-eye/runs/vppciq3g?workspace=user-xvr-hlt).
-- What level of half-precision should we use?
-
-### Half precision training
-
-- Half precision training using AMP in the default mode works best. See: [full precision](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/nf4axyr0?workspace=user-xvr-hlt) lower batch size, [half-precision (default)](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/i1op16sa?workspace=user-xvr-hlt) 82% mem@batch8, [half-precision (alternative)](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/ycet76vn?workspace=user-xvr-hlt) 86% mem@batch8, more variance.
+![](img/mask-rcnn.png)
 
 
-## Eval hacking
-- Evaluation is 30% building localisation + 70% classification. 
-- However, in order to score a pixel correctly for classification, we first need to have localised it correctly.
-- This potentially implies we should be more recall oriented for localisation?
-- Also, in around 18% of images there are no buildings at all. In these cases, the eval metric is 1. if we predict no pixels, or 0. otherwise. 
-    - To evaluate: add a threshold on images to predict 
+## Proposed Architecture
+
+- Semantic segmentation on 'before' image to define regions of interest.
+- RoI-pooling + classification on 'after' images. 
+- Why semantic segmentation on 'before' image? Much better recall: instance segmentation comes from the world of e.g. CoCo – where evaluation is measured by the number of 'good enough' masks. This task is evaluated on the pixel level.
+    - In addition, we can – one of the issues with instance segmentation is going from mask -> individual instances. We're evaluated at pixel level so this isn't essential.
+- Why RoI pooling/object detection approach on the second image? This corresponds with the way that the images are labeled e.g. each polygon is classified into one of several categories.
+    - It also addresses the labeling drift – bounding boxes are much closer than the masks.
+    - Alternative: segmentation. A little more finicky to set-up.
+- Heavy data augmentation, half-precision training, Linknet segmentation with efficientnet backbone.
+
+## Experimental Setups
+
+- All experiments managed using [Wandb](https://app.wandb.ai/xvr-hlt/sky-eye-full?workspace=user-xvr-hlt).
+    - Config management.
+    - Models saved to cloud.
+    - Experimental management.
+    - Recreating runs.
+    - Easy to setup.
+- Try and move from big to little picture. E.g. architecture -> loss -> model, etc.
+- Be aware of metric – f-score is sensitive to threshold and noise – loss is more stable, but less interpretable. 
+- Find minimum experimental setup: e.g. performance @ [512x512](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/ulzmrrsr?workspace=user-xvr-hlt) resolution generalizes to [1024x1024](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/je2in7no?workspace=user-xvr-hlt) (and trains 4x faster).
+- Notebook + lean codebase (frequently re-iterate).
+
+## Selected experiments
+
+- Building segmentation
+    - [Semantic segmentation]() outperforms [instance segmentation](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/2a4h1a2q?workspace=user-xvr-hlt).
+    - Segmentation architectures: [LinkNet](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/n1sjxbai/overview) and [UNet](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/rpu0bhol/overview) have better performance profiles vs. [FPN](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/hsogqx3z?workspace=user-xvr-hlt) and [PSPNet](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/9lvz3chz/system).
+    - Pretraining: [static pretrained architecture](https://solaris.readthedocs.io/en/latest/pretrained_models.html) vs [hand-rolled](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/rpu0bhol/overview).
+    - Train models separately or together? [Joint training/models](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/ch8ist1l?workspace=user-xvr-hlt) don't seem to outperform [individually trained](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/eaqy65bh?workspace=user-xvr-hlt) models.
+    - Data augmentation: applying [25%](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/3ret9bp7?workspace=user-xvr-hlt), [50%](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/ulzmrrsr?workspace=user-xvr-hlt), [75%](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/3ret9bp7?workspace=user-xvr-hlt) of the time.
+    - Different losses: [BCE](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/c57q03tf?workspace=user-xvr-hlt) vs. [Focal](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/c57q03tf?workspace=user-xvr-hlt) vs. [Focal + IoU](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/cd6uodg5?workspace=user-xvr-hlt).
+    - Half precision training using AMP in the default mode works best. See: [full precision](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/nf4axyr0?workspace=user-xvr-hlt) lower batch size, [half-precision (default)](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/i1op16sa?workspace=user-xvr-hlt) 82% mem@batch8, [half-precision (alternative)](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/ycet76vn?workspace=user-xvr-hlt) 86% mem@batch8, more variance.
+
+
+## To do
+
+- Much more possible work on the damage classification component.
+- Deformable convolutions.
+- [Class-context concatenation](https://github.com/PkuRainBow/OCNet.pytorch).
+- Different batch norms – frozen BN, group BN.
+- [Explicit edge categorisation](https://paperswithcode.com/paper/gated-scnn-gated-shape-cnns-for-semantic) in a separate CNN module.
+
+
+## Useful tools
+- [Wandb](http://wandb.com/).
+- [Apex](https://github.com/NVIDIA/apex/tree/master/apex/amp) – half-precision/mixed-precision training from NVIDIA.
+- [Segmentation Models Pytorch](https://github.com/qubvel/segmentation_models.pytorch): lightweight, nice API for segmentation.
+- [Detectron2](https://github.com/facebookresearch/detectron2): heavy-weight, more deeply integrated, harder to use – far more features and state of the art models. Complexity partly required by much more complicated approach.
+
+## Competition vs. production
+- Prioritising single metric over maintainability, readability, performance, generalisability etc.
+- Great for learning new skills.
+
+## Conclusions
+- Solving the right problem.
+- In the right way.
+- Lean experimental setup.
+- Lightweight codebase – the right balance between saving time now or saving time later.

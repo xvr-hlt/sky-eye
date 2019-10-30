@@ -1,15 +1,14 @@
 --- 
 segmentation_arch: Linknet
-batch_size: 2
+batch_size: 6
 amp_opt_level: O1
-aug_prob: 0.5
+aug_prob: 0.25
 encoder: efficientnet-b6
-training_resolution: 1024
+training_resolution: 512
 loss_weights:
     value: {jaccard: 1, focal: 4}
-lr: 0.0005
+lr: 0.00025
 optim: adam
 scheduler_factor: 0.5
 scheduler_patience: 5
 epochs: 100
-decoder_use_batchnorm: inplace
