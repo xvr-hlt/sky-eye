@@ -87,7 +87,7 @@
     - Pretraining: [static pretrained architecture](https://solaris.readthedocs.io/en/latest/pretrained_models.html) vs [hand-rolled](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/rpu0bhol/overview).
     - Train models separately or together? [Joint training/models](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/ch8ist1l?workspace=user-xvr-hlt) don't seem to outperform [individually trained](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/eaqy65bh?workspace=user-xvr-hlt) models.
     - Data augmentation: applying [25%](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/3ret9bp7?workspace=user-xvr-hlt), [50%](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/ulzmrrsr?workspace=user-xvr-hlt), [75%](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/3ret9bp7?workspace=user-xvr-hlt) of the time.
-    - Different losses: [BCE](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/c57q03tf?workspace=user-xvr-hlt) vs. [Focal](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/c57q03tf?workspace=user-xvr-hlt) vs. [Focal + IoU](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/cd6uodg5?workspace=user-xvr-hlt).
+    - Different losses: [Focal](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/cbqlwfjy) vs. [Focal + IoU](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/cd6uodg5?workspace=user-xvr-hlt).
     - Half precision training using AMP in the default mode works best. See: [full precision](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/nf4axyr0?workspace=user-xvr-hlt) lower batch size, [half-precision (default)](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/i1op16sa?workspace=user-xvr-hlt) 82% mem@batch8, [half-precision (alternative)](https://app.wandb.ai/xvr-hlt/sky-eye-full/runs/ycet76vn?workspace=user-xvr-hlt) 86% mem@batch8, more variance.
 
 
