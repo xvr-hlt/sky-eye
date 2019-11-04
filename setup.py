@@ -14,7 +14,8 @@ REQUIRES = [
     'click',
     'wandb',
     'shapely'
-    #'git+https://github.com/qubvel/segmentation_models.pytorch'
+    #'git+https://github.com/qubvel/segmentation_models.pytorch',
+    #'git+https://github.com/qubvel/ttach'
 ]
 
 setup(
