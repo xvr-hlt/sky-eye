@@ -10,7 +10,7 @@ from random import choice
 from xv.submission_metrics import RowPairCalculator
 import scipy
 
-def train_segment(model, optim, data, loss_fn):
+def train_segment(model, optim, data, loss_fn, mode=None):
     model = model.train()
     loss_sum = 0.
 
@@ -55,7 +55,7 @@ def train_damage(model, optim, data, loss_fn, mode=None):
         'train:loss':loss_sum/len(data)
     }
 
-def evaluate_segment(model, data, loss_fn, threshold=0.5):
+def evaluate_segment(model, data, loss_fn, threshold=0.5, mode=None):
     model = model.eval()
     tps, fps, fns, loss = 0., 0., 0., 0.
     with torch.no_grad():
@@ -113,7 +113,10 @@ def evaluate_damage(model, data, loss_fn, threshold=0.5, nclasses=4, mode=None):
 
 def get_tp_fp_fn(outputs, targets, threshold=0.5):
     outputs_bool = outputs.sigmoid() > threshold
-    targets_bool = targets.to(torch.uint8)
+    if torch.__version__.startswith("1.3"):
+        targets_bool = targets.to(torch.bool)
+    else:
+        targets_bool = targets.to(torch.bool)
     
     tp = outputs_bool[targets_bool].float().sum() if targets_bool.float().sum() > 0 else 0.
     fn = targets_bool[~outputs_bool].float().sum() if (~outputs_bool).float().sum() > 0 else 0.
