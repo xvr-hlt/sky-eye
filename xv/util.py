@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw
 import numpy as np
 
 def vis_im_mask(image, mask=None, size=(1024,1024), opacity=.5, colours=('blue', 'yellow', 'orange', 'red')):
-    im = Image.fromarray(image).resize(size)
+    im = Image.fromarray(np.array(image)).resize(size)
     if mask is None:
         return im
     if len(mask.shape) == 2:

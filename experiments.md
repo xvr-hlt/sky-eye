@@ -73,3 +73,9 @@ Conclusion: train from scratch.
 - However, in order to score a pixel correctly for classification, we first need to have localised it correctly.
 - This potentially implies we should be more recall oriented for localisation.
 - F-scores are harmonic-meaned across classes. 
+
+
+# Other
+- Dataset: https://github.com/BloodAxe/Catalyst-Inria-Segmentation-Example/blob/master/cut_dataset.py
+- https://project.inria.fr/aerialimagelabeling/download/
+- https://spacenetchallenge.github.io/datasets/spacenetBuildings-V2summary.html (650k footprints)
