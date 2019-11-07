@@ -12,3 +12,13 @@ def vis_im_mask(image, mask=None, size=(1024,1024), opacity=.5, colours=('blue',
         highlight = Image.new('RGB', size, colour)
         im = Image.composite(im, highlight, ma).convert('RGB')
     return im
+
+
+def vis_boxes(image, boxes=[], labels=None, colours=('green', 'yellow', 'red', 'purple')):
+    im = Image.fromarray(np.array(image))
+    labels = labels if labels is not None else [0 for _ in range(boxes)]
+    draw = ImageDraw.Draw(im)
+    h,w = im.size
+    for box, cl_ix in zip(boxes, labels):
+        draw.rectangle(box, outline=colours[cl_ix], width=3)
+    return im

@@ -10,11 +10,13 @@ from random import choice
 from xv.submission_metrics import RowPairCalculator
 import scipy
 
-def train_segment(model, optim, data, loss_fn, mode=None):
+def train_segment(model, optim, data, loss_fn, train_resize=None, mode=None):
     model = model.train()
     loss_sum = 0.
 
     for image, mask in tqdm(iter(data)):
+        if train_resize:
+            image, mask = train_resize((image, mask))
         optim.zero_grad()
         outputs = model(image.to('cuda'))
         targets = mask.to('cuda')
@@ -31,11 +33,13 @@ def train_segment(model, optim, data, loss_fn, mode=None):
         'train:loss':loss_sum/len(data)
     }
 
-def train_damage(model, optim, data, loss_fn, mode=None):
+def train_damage(model, optim, data, loss_fn, train_resize=None, mode=None):
     model = model.train()
     loss_sum = 0.
 
     for image, mask in tqdm(iter(data)):
+        if train_resize:
+            image, mask = train_resize((image, mask))
         optim.zero_grad()
         outputs = model(image.to('cuda'))
         if mode == 'categorical':
@@ -85,7 +89,7 @@ def evaluate_damage(model, data, loss_fn, threshold=0.5, nclasses=4, mode=None):
                 loss += loss_fn(outputs.permute(0,2,3,1)[mask_bool], mask[mask_bool].cuda())
                 
             mask = np.array(mask.cpu())
-            outputs = np.array(outputs.argmax(1).cpu())
+            outputs = np.array(outputs.float().argmax(1).cpu())
             
             flat_output, flat_target = outputs[mask_bool], mask[mask_bool]
             

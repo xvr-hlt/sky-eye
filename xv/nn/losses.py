@@ -36,6 +36,7 @@ class DiceLoss(JaccardLoss):
     def forward(self, outputs, targets):
         jaccard = 1-super().forward(outputs, targets)
         return 1-(2 * jaccard/(1+jaccard))
+    
 
 class FocalLoss(nn.Module):
     def __init__(self, gamma = 2.0, alpha = 0.25, reduction="mean"):

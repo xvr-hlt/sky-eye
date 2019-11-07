@@ -2,11 +2,12 @@
 nclasses: 1
 data_prefix: pre
 segmentation_arch: Linknet
-batch_size: 6
+batch_size: 2
 amp_opt_level: O1
 aug_prob: 0.5
 encoder: efficientnet-b6
-training_resolution: 512
+training_resolution: 1024
+training_scales: [0.5, 0.75, 1.]
 loss_weights: {jaccard: 1, focal: 4}
 lr: 0.0005
 optim: adam
@@ -16,3 +17,6 @@ epochs: 100
 filter_none: False
 mode: null
 metric: "building:f1"
+add_suppl: False
+train_repeat: 1
+project: sky-eye-full

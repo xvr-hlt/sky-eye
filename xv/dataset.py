@@ -115,3 +115,58 @@ class BuildingSegmentationDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.instances)
+    
+    
+class DamageClassificationDataset(torch.utils.data.Dataset):
+    def __init__(self, instances, nclasses, augment=None, preprocess_fn=None, image_mean = (0.485, 0.456, 0.406), image_std = (0.229, 0.224, 0.225)):
+        self.instances = instances
+        self.nclasses = nclasses
+        self.augment = augment
+        self.preprocess_fn = preprocess_fn
+        self.image_mean = image_mean
+        self.image_std = image_std
+
+    def __getitem__(self, ix):
+        instance = self.instances[ix]
+        image = np.array(Image.open(instance['file_name']))
+        
+        boxes, labels = [], []
+        
+        for a in instance['annotations']:
+            boxes.append(a['bbox'])
+            labels.append(a['category_id'])
+        
+        h,w,_ = image.shape
+        boxes = np.array(boxes)
+        boxes = np.clip(boxes, 0, 1)
+        
+        boxes[:,0] *= w
+        boxes[:,1] *= h
+        boxes[:,2] *= w
+        boxes[:,3] *= h
+        
+        
+        if self.augment:
+            aug = self.augment(image=image, bboxes=boxes, labels=labels)
+            image, boxes, labels = aug['image'], aug['bboxes'], aug['labels']
+            #boxes = np.array(boxes)
+        
+        image = self.transform_image(image)
+        
+        return image, boxes, labels
+
+    def transform_image(self, image):
+        image = image.astype(np.float32)
+        image /= 255.
+        image = (image-self.image_mean)/self.image_std
+        image = image.transpose(2,0,1)
+        return image
+
+    def inverse_transform_image(self, image):
+        image = image.transpose(1,2,0)
+        image = (image*self.image_std) + self.image_mean
+        image = (image*255).astype('uint8')
+        return Image.fromarray(image)
+
+    def __len__(self):
+        return len(self.instances)
