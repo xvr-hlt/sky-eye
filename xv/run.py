@@ -120,7 +120,7 @@ def get_tp_fp_fn(outputs, targets, threshold=0.5):
     if torch.__version__.startswith("1.3"):
         targets_bool = targets.to(torch.bool)
     else:
-        targets_bool = targets.to(torch.bool)
+        targets_bool = targets.to(torch.uint8)
     
     tp = outputs_bool[targets_bool].float().sum() if targets_bool.float().sum() > 0 else 0.
     fn = targets_bool[~outputs_bool].float().sum() if (~outputs_bool).float().sum() > 0 else 0.
