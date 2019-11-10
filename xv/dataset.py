@@ -59,8 +59,13 @@ def get_mask(polygons, w, h):
         draw.polygon(tuple((x*w, y*h) for x,y in polygon), outline=1, fill=1)
     return np.array(img).astype(np.float32)
 
+class ImageDataset(torch.utils.data.Dataset):
+    pass
+        
+
 class BuildingSegmentationDataset(torch.utils.data.Dataset):
     def __init__(self, instances, nclasses, augment=None, resolution=1024, preprocess_fn=None, mode=None):
+        super().__init__()
         self.instances = instances
         self.nclasses = nclasses
         self.augment = augment
@@ -118,11 +123,11 @@ class BuildingSegmentationDataset(torch.utils.data.Dataset):
     
     
 class DamageClassificationDataset(torch.utils.data.Dataset):
-    def __init__(self, instances, nclasses, augment=None, preprocess_fn=None, image_mean = (0.485, 0.456, 0.406), image_std = (0.229, 0.224, 0.225)):
+    def __init__(self, instances, nclasses, augment=None, image_mean = (0.485, 0.456, 0.406), image_std = (0.229, 0.224, 0.225)):
+        super().__init__()
         self.instances = instances
         self.nclasses = nclasses
         self.augment = augment
-        self.preprocess_fn = preprocess_fn
         self.image_mean = image_mean
         self.image_std = image_std
 
@@ -149,7 +154,6 @@ class DamageClassificationDataset(torch.utils.data.Dataset):
         if self.augment:
             aug = self.augment(image=image, bboxes=boxes, labels=labels)
             image, boxes, labels = aug['image'], aug['bboxes'], aug['labels']
-            #boxes = np.array(boxes)
         
         image = self.transform_image(image)
         

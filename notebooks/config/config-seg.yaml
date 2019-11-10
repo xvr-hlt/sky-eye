@@ -1,0 +1,26 @@
+---
+nclasses: 1
+data_prefix: pre
+segmentation_arch: Unet
+attention: scse
+batch_size: 6
+training_scales: [1.]
+training_resolution: 512
+amp_opt_level: O1
+aug_prob: 0.5
+encoder: efficientnet-b7
+loss_weights: {jaccard: 1, focal: 4}
+lr: 0.0005
+optim: adam
+scheduler_factor: 0.5
+scheduler_patience: 5
+epochs: 100
+filter_none: False
+mode: null
+metric: "building:f1"
+add_suppl: False
+train_repeat: 1
+project: sky-eye-full
+freeze_encoder_norm: False
+freeze_decoder_norm: False
+load_weights: False #'../weights/unet-se.pth'

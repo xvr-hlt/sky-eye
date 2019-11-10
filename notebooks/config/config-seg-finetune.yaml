@@ -3,14 +3,14 @@ nclasses: 1
 data_prefix: pre
 segmentation_arch: Unet
 attention: scse
-batch_size: 6
+batch_size: 1
+training_scales: [.75, 1.]
+training_resolution: 1024
 amp_opt_level: O1
 aug_prob: 0.5
 encoder: efficientnet-b7
-training_scales: [.75, 1.]
-training_resolution: 1024
 loss_weights: {jaccard: 1, focal: 4}
-lr: 0.00005
+lr: 0.0001
 optim: adam
 scheduler_factor: 0.5
 scheduler_patience: 5
@@ -23,4 +23,4 @@ train_repeat: 1
 project: sky-eye-full
 freeze_encoder_norm: True
 freeze_decoder_norm: True
-load_weights: '../weights/state_dict.pth'
+load_weights: '/home/jovyan/work/sky-eye/notebooks/wandb/run-20191110_112507-ea1tdpuc/state_dict.pth'
