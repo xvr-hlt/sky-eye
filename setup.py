@@ -16,9 +16,6 @@ REQUIRES = [
     'shapely',
     'segmentation-models-pytorch',
     'ttach'
-    
-    #'git+https://github.com/qubvel/segmentation_models.pytorch',
-    #'git+https://github.com/qubvel/ttach'
 ]
 
 setup(
@@ -34,4 +31,3 @@ setup(
     install_requires=REQUIRES,
     packages=find_packages(),
 )
-

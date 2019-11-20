@@ -24,4 +24,4 @@ add_tertiary: True
 project: sky-eye-full
 freeze_encoder_norm: False
 freeze_decoder_norm: False
-load_weights: False #'../weights/unet-se-1024.pth'
+load_weights: False
