@@ -18,9 +18,9 @@ epochs: 100
 filter_none: False
 mode: null
 metric: "building:f1"
-add_suppl: False
+add_suppl: True
 train_repeat: 1
 project: sky-eye-full
 freeze_encoder_norm: False
 freeze_decoder_norm: False
-load_weights: False #'../weights/unet-se.pth'
+load_weights: False #'../weights/unet-se-1024.pth'

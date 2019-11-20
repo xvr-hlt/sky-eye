@@ -23,4 +23,4 @@ train_repeat: 1
 project: sky-eye-full
 freeze_encoder_norm: True
 freeze_decoder_norm: True
-load_weights: '/home/jovyan/work/sky-eye/notebooks/wandb/run-20191110_112507-ea1tdpuc/state_dict.pth'
+load_weights: './wandb/run-20191114_063404-0udvk80d/state_dict.pth'

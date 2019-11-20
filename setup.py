@@ -13,7 +13,10 @@ REQUIRES = [
     'albumentations',
     'click',
     'wandb',
-    'shapely'
+    'shapely',
+    'segmentation-models-pytorch',
+    'ttach'
+    
     #'git+https://github.com/qubvel/segmentation_models.pytorch',
     #'git+https://github.com/qubvel/ttach'
 ]
