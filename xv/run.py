@@ -59,6 +59,7 @@ def train_damage(model, optim, data, loss_fn, train_resize=None, mode=None):
         'train:loss':loss_sum/len(data)
     }
 
+@torch.no_grad()
 def evaluate_segment(model, data, loss_fn, threshold=0.5, mode=None):
     model = model.eval()
     tps, fps, fns, loss = 0., 0., 0., 0.
@@ -74,30 +75,30 @@ def evaluate_segment(model, data, loss_fn, threshold=0.5, mode=None):
     metrics.update({f'building:{k}':v for k,v in get_metrics_for_counts(tps, fps, fns).items()})
     return metrics
 
+@torch.no_grad()
 def evaluate_damage(model, data, loss_fn, threshold=0.5, nclasses=4, mode=None):
     model = model.eval()
     metrics = {}
     loss=0.
     tps, fps, fns = defaultdict(float), defaultdict(float), defaultdict(float)
     tps_c, fps_c, fns_c = defaultdict(float), defaultdict(float), defaultdict(float)
-    with torch.no_grad():
-        for image, mask in tqdm(iter(data)):
-            outputs = model(image.cuda())
+    for image, mask in tqdm(iter(data)):
+        outputs = model(image.cuda())
+        
+        if mode == "categorical":
+            mask_bool, mask = mask
+            loss += loss_fn(outputs.permute(0,2,3,1)[mask_bool], mask[mask_bool].cuda())
             
-            if mode == "categorical":
-                mask_bool, mask = mask
-                loss += loss_fn(outputs.permute(0,2,3,1)[mask_bool], mask[mask_bool].cuda())
-                
-            mask = np.array(mask.cpu())
-            outputs = np.array(outputs.float().argmax(1).cpu())
-            
-            flat_output, flat_target = outputs[mask_bool], mask[mask_bool]
-            
-            for ix in range(nclasses):                
-                tp, fn, fp = RowPairCalculator.compute_tp_fn_fp(flat_output, flat_target, ix)
-                tps[ix] += tp
-                fps[ix] += fp
-                fns[ix] += fn
+        mask = np.array(mask.cpu())
+        outputs = np.array(outputs.float().argmax(1).cpu())
+        
+        flat_output, flat_target = outputs[mask_bool], mask[mask_bool]
+        
+        for ix in range(nclasses):                
+            tp, fn, fp = RowPairCalculator.compute_tp_fn_fp(flat_output, flat_target, ix)
+            tps[ix] += tp
+            fps[ix] += fp
+            fns[ix] += fn
 
     metrics['loss'] = loss / len(data)
     
@@ -117,7 +118,7 @@ def evaluate_damage(model, data, loss_fn, threshold=0.5, nclasses=4, mode=None):
 
 def get_tp_fp_fn(outputs, targets, threshold=0.5):
     outputs_bool = outputs.sigmoid() > threshold
-    if torch.__version__.startswith("1.3"):
+    if torch.__version__.startswith("1.2") or torch.__version__.startswith("1.3"):
         targets_bool = targets.to(torch.bool)
     else:
         targets_bool = targets.to(torch.uint8)

@@ -4,12 +4,12 @@ from torchvision.ops import MultiScaleRoIAlign
 from torchvision.models.detection.faster_rcnn import TwoMLPHead
 
 class BoxClassifier(nn.Module):
-    def __init__(self, backbone, nclasses):
+    def __init__(self, backbone, nclasses, featmap_names=[0, 1, 2, 3]):
         super().__init__()
         self.backbone = backbone
         
         self.roi_pool = MultiScaleRoIAlign(
-            featmap_names=[0, 1, 2, 3],
+            featmap_names=featmap_names,
             output_size=7,
             sampling_ratio=2
         )
