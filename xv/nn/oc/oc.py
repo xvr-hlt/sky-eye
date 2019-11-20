@@ -151,3 +151,45 @@ class BaseOC_Context_Module(nn.Module):
             context += priors[i]
         output = self.conv_bn_dropout(context)
         return output
+
+
+class InterlacedSparseSelfAttention(nn.Module):
+    
+    def __init__(self, in_channels, key_channels=None, value_channels=None, ph=8, pw=8):
+        # ph, pw: Number of partitions along H and W dimension
+        super().__init__()
+        
+        self.ph = ph
+        self.pw = pw
+        
+        key_channels = key_channels or in_channels // 2
+        value_channels = value_channels or in_channels // 2
+        
+        self.long_attent = SelfAttentionBlock2D(in_channels, key_channels, value_channels)
+        
+        self.short_attent = SelfAttentionBlock2D(in_channels, key_channels, value_channels)
+        
+    def forward(self, x):
+        ph, pw = self.ph, self.pw
+        # x: input features with shape [N,C,H,W]
+        n, c, h, w = x.size()
+        
+        qh, qw = h // self.ph, w // self.pw
+        
+        x = x.reshape(n, c, qh, ph, qw, pw)
+        x = x.permute(0, 3, 5, 1, 2, 4) # n, ph, pw, c, qh, qw
+        x = x.reshape(n*ph*pw, c, qh, qw) # n * ph * pw, c, qh, qw
+        
+        # Long−range Attention
+        
+        x = self.long_attent(x)
+        
+        x = x.reshape(n, ph, pw, c, qh, qw)
+        
+        x = x.permute(0, 4, 5, 3, 1, 2) # n, qh, qw, c, ph, pw
+        x = x.reshape(n*qh*qw, c, ph, pw) # n * qh * qw, c, ph, pw
+        
+        x = self.short_attent(x)
+        
+        x = x.reshape(n, qh, qw, c, ph, pw)
+        return x.permute(0, 3, 1, 4, 2, 5).reshape(n, c, h, w)

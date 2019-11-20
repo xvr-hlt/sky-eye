@@ -17,6 +17,7 @@ filter_none: True
 class_weight: [1, 3, 2, 2]
 loss_reduce_mode: "sum"
 min_bbox_visibility: 0.2
-add_suppl: False
-train_repeat: 2
-pretrain_weights: False #'/home/jupyter/sky-eye/notebooks/wandb/run-20191106_084154-35ipugq1/final_state_dict.pth'
+pretrain_weights: False
+add_suppl: True
+train_repeat: 1
+pretrain_weights: False

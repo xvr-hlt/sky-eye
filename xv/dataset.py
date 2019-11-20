@@ -72,11 +72,17 @@ class BuildingSegmentationDataset(torch.utils.data.Dataset):
         self.preprocess_fn = preprocess_fn
         self.resolution = resolution
         self.mode = mode
+        if self.mode == 'dual' and self.augment:
+            self.augment.add_targets({'image_post': 'image'})
 
     def __getitem__(self, ix):
         instance = self.instances[ix]
         image = np.array(Image.open(instance['file_name']))
         image = cv2.resize(image, (self.resolution, self.resolution))
+        if self.mode == "dual":
+            image_post = np.array(Image.open(instance['file_name'].replace('pre', 'post')))
+            image_post = cv2.resize(image_post, (self.resolution, self.resolution))
+            
         
         polygons_by_class = [[] for _ in range(self.nclasses)]
         for a in instance['annotations']:
@@ -87,7 +93,11 @@ class BuildingSegmentationDataset(torch.utils.data.Dataset):
         mask = [get_mask(polygons, w, h) for polygons in polygons_by_class]
         
         if self.augment:
-            aug = self.augment(image=image, masks=mask)
+            if self.mode == "dual":
+                aug = self.augment(image=image, image_post=image_post, masks=mask)
+                image_post = aug['image_post']
+            else:
+                aug = self.augment(image=image, masks=mask)
             image, mask = aug['image'], aug['masks']
         
         mask = np.stack(mask)
@@ -100,9 +110,14 @@ class BuildingSegmentationDataset(torch.utils.data.Dataset):
             mask_bool = mask.sum(0) > 0
             mask = mask.argmax(0)
             mask = mask_bool, mask
-            
+        
         image = image.astype(np.float32)
         image = self.transform_image(image)
+        
+        if self.mode == "dual":
+            image_post = image_post.astype(np.float32)
+            image_post = self.transform_image(image_post)
+            image = np.concatenate([image, image_post])
         
         return image, mask
 
@@ -149,6 +164,7 @@ class DamageClassificationDataset(torch.utils.data.Dataset):
         boxes[:,1] *= h
         boxes[:,2] *= w
         boxes[:,3] *= h
+        boxes = [b for b in boxes]
         
         
         if self.augment:

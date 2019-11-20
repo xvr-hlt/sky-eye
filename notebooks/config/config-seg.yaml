@@ -20,6 +20,7 @@ mode: null
 metric: "building:f1"
 add_suppl: True
 train_repeat: 1
+add_tertiary: True
 project: sky-eye-full
 freeze_encoder_norm: False
 freeze_decoder_norm: False
