@@ -14,8 +14,9 @@ REQUIRES = [
     'click',
     'wandb',
     'shapely',
-    'segmentation-models-pytorch',
-    'ttach'
+    'ttach',
+    'pandas',
+    'pytorch_toolbelt'
 ]
 
 setup(

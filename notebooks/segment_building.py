@@ -1,7 +1,6 @@
 from xv import run
 from torchvision.ops import misc as misc_nn_ops
-from apex import amp
-import apex
+#from apex import amp
 from torch.nn.modules.loss import CrossEntropyLoss
 from xv.nn.losses import loss_dict, WeightedLoss
 from pytorch_toolbelt import losses
@@ -14,7 +13,7 @@ from xv.util import vis_im_mask
 from torch import nn
 import torch
 import numpy as np
-from tqdm import tqdm_notebook as tqdm
+from tqdm import tqdm
 from glob import glob
 from pprint import pprint
 import segmentation_models_pytorch as smp
@@ -32,7 +31,7 @@ with open(conf_file) as f:
     conf_init = yaml.load(f)
 
 
-#os.environ['WANDB_MODE'] = 'dryrun'
+os.environ['WANDB_MODE'] = 'dryrun'
 wandb.init(project=conf_init['project'], config=conf_init, name=conf_init['name'])
 conf = wandb.config
 
@@ -67,7 +66,7 @@ model_classes = conf.nclasses
 model = segmentation_types[conf.segmentation_arch](
     conf.encoder,
     classes=model_classes,
-    decoder_attention_type=conf.attention,
+    attention_type=conf.attention,
 )
 
 if conf.mode == "dual":
@@ -85,7 +84,10 @@ if conf.freeze_encoder_norm:
 if conf.freeze_decoder_norm:
     model.decoder = FrozenBatchNorm2d.convert_frozen_batchnorm(model.decoder)
 
-model = model.cuda()
+if torch.cuda.device_count() > 1:
+    model = nn.DataParallel(model)
+
+model.to('cuda')
 
 
 train_stems = pd.read_csv('config/train_stems.csv', header=None)[0]
@@ -186,7 +188,7 @@ dev_loader = torch.utils.data.DataLoader(
 )
 
 
-model, optim = amp.initialize(model, optim, opt_level=conf.amp_opt_level)
+#model, optim = amp.initialize(model, optim, opt_level=conf.amp_opt_level)
 
 
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(

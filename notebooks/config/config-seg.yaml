@@ -1,14 +1,15 @@
 ---
+name: nci
 nclasses: 1
 data_prefix: pre
 segmentation_arch: Unet
 attention: scse
-batch_size: 6
+batch_size: 4
 training_scales: [1.]
 training_resolution: 512
 amp_opt_level: O1
 aug_prob: 0.5
-encoder: efficientnet-b7
+encoder: efficientnet-b6
 loss_weights: {jaccard: 1, focal: 4}
 lr: 0.0005
 optim: adam
@@ -20,7 +21,7 @@ mode: null
 metric: "building:f1"
 add_suppl: True
 train_repeat: 1
-add_tertiary: True
+add_tertiary: False
 project: sky-eye-full
 freeze_encoder_norm: False
 freeze_decoder_norm: False

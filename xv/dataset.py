@@ -4,7 +4,7 @@ import cv2
 from collections import defaultdict
 import copy
 from glob import glob
-from tqdm import tqdm_notebook as tqdm
+from tqdm import tqdm
 from PIL import Image, ImageDraw
 import json
 import shapely.wkt

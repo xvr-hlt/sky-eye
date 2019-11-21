@@ -1,7 +1,7 @@
 import torch
 from collections import defaultdict
-from tqdm import tqdm_notebook as tqdm
-from apex import amp
+from tqdm import tqdm
+#from apex import amp
 from . import util
 from PIL import Image
 import random
@@ -23,9 +23,9 @@ def train_segment(model, optim, data, loss_fn, train_resize=None, mode=None):
         
         loss = loss_fn(outputs, targets)
         
-        with amp.scale_loss(loss, optim) as scaled_loss:
-            scaled_loss.backward()
-
+        #with amp.scale_loss(loss, optim) as scaled_loss:
+        #    scaled_loss.backward()
+        loss.backward()
         optim.step()
         loss_sum += loss
         
