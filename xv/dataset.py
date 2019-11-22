@@ -58,11 +58,7 @@ def get_mask(polygons, w, h):
     for polygon in polygons:
         draw.polygon(tuple((x*w, y*h) for x,y in polygon), outline=1, fill=1)
     return np.array(img).astype(np.float32)
-
-class ImageDataset(torch.utils.data.Dataset):
-    pass
-        
-
+    
 class BuildingSegmentationDataset(torch.utils.data.Dataset):
     def __init__(self, instances, nclasses, augment=None, resolution=1024, preprocess_fn=None, mode=None):
         super().__init__()
@@ -74,23 +70,26 @@ class BuildingSegmentationDataset(torch.utils.data.Dataset):
         self.mode = mode
         if self.mode == 'dual' and self.augment:
             self.augment.add_targets({'image_post': 'image'})
-
+            
+    def get_image(self, ix):
+        return np.array(Image.open(self.instances[ix]['file_name']))
+        
+    def get_mask(self, ix):
+        polygons_by_class = [[] for _ in range(self.nclasses)]
+        for a in self.instances[ix]['annotations']:
+            polygons_by_class[a['category_id']].append(a['segmentation'])
+        return [get_mask(polygons, self.resolution, self.resolution) for polygons in polygons_by_class]
+        
     def __getitem__(self, ix):
         instance = self.instances[ix]
-        image = np.array(Image.open(instance['file_name']))
+        image = self.get_image(ix)
         image = cv2.resize(image, (self.resolution, self.resolution))
-        if self.mode == "dual":
+        
+        if self.mode == "dual": # cursed
             image_post = np.array(Image.open(instance['file_name'].replace('pre', 'post')))
             image_post = cv2.resize(image_post, (self.resolution, self.resolution))
-            
         
-        polygons_by_class = [[] for _ in range(self.nclasses)]
-        for a in instance['annotations']:
-            polygons_by_class[a['category_id']].append(a['segmentation'])
-        
-        
-        w, h, _ = image.shape
-        mask = [get_mask(polygons, w, h) for polygons in polygons_by_class]
+        mask = self.get_mask(ix)
         
         if self.augment:
             if self.mode == "dual":
@@ -166,7 +165,6 @@ class DamageClassificationDataset(torch.utils.data.Dataset):
         boxes[:,3] *= h
         boxes = [b for b in boxes]
         
-        
         if self.augment:
             aug = self.augment(image=image, bboxes=boxes, labels=labels)
             image, boxes, labels = aug['image'], aug['bboxes'], aug['labels']
@@ -190,3 +188,19 @@ class DamageClassificationDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.instances)
+
+
+class ImageMaskDataset(BuildingSegmentationDataset):
+    def __init__(self, image_paths, mask_paths, **super_args):
+        self.image_paths = image_paths
+        self.mask_paths = mask_paths
+        super().__init__(instances=None, )
+        
+    def __len__(self):
+        return len(self.image_paths)
+    
+    def get_image(self, ix):
+        return np.array(Image.open(self.image_paths[ix]))
+    
+    def get_mask(self, ix):
+        return np.load(self.mask_paths)

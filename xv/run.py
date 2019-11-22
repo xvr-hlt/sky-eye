@@ -1,4 +1,5 @@
 import torch
+from torch import nn
 from collections import defaultdict
 from tqdm import tqdm
 #from apex import amp
@@ -9,6 +10,33 @@ import numpy as np
 from random import choice
 from xv.submission_metrics import RowPairCalculator
 import scipy
+
+class MultiScaleResize(nn.Module):
+    def __init__(self, mode="categorical", scales=(0.5, 0.75, 1.)):
+        super().__init__()
+        self.mode = mode
+        self.scales = scales
+
+    @torch.no_grad()
+    def forward(self, batch):
+        scale = random.choice(self.scales)
+        if scale == 1.:
+            return batch
+        if self.mode is None or self.mode == "dual":
+            im, mask = batch
+            mask_dtype = mask.dtype
+            im = torch.nn.functional.interpolate(im, scale_factor=scale, mode='bilinear', align_corners=False)
+            mask = misc_nn_ops.interpolate(mask.float(), scale_factor=scale).to(mask_dtype)
+            return im, mask
+        if self.mode == "categorical":
+            im, (damage_mask, damage) = batch
+            dmg_msk_dtype = damage_mask.dtype()
+            dmg_dtype = damage.dtype()
+            im = torch.nn.functional.interpolate(im, scale_factor=scale, mode='bilinear', align_corners=False)
+            damage_mask = misc_nn_ops.interpolate(damage_mask[None].float(), scale_factor=scale)[0].to(dmg_msk_dtype)
+            damage_one_hot = torch.nn.functional.one_hot(damage).permute(0, 3, 1, 2)
+            damage = misc_nn_ops.interpolate(damage_one_hot.float(), scale_factor=scale).argmax(1)
+            return im, (damage_mask, damage)
 
 def train_segment(model, optim, data, loss_fn, train_resize=None, mode=None):
     model = model.train()
@@ -25,6 +53,7 @@ def train_segment(model, optim, data, loss_fn, train_resize=None, mode=None):
         
         #with amp.scale_loss(loss, optim) as scaled_loss:
         #    scaled_loss.backward()
+        
         loss.backward()
         optim.step()
         loss_sum += loss

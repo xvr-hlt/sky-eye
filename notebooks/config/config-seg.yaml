@@ -1,5 +1,5 @@
 ---
-name: nci
+name: reconf
 nclasses: 1
 data_prefix: pre
 segmentation_arch: Unet
@@ -19,10 +19,15 @@ epochs: 100
 filter_none: False
 mode: null
 metric: "building:f1"
-add_suppl: True
+
+add_suppl: False
 train_repeat: 1
 add_tertiary: False
+
 project: sky-eye-full
 freeze_encoder_norm: False
 freeze_decoder_norm: False
 load_weights: False
+sync_bn: True
+train_patch: True
+n_cpus: 10
