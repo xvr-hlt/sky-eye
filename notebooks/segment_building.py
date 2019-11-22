@@ -90,10 +90,7 @@ for epoch in range(epoch, conf.epochs):
     wandb.log(metrics)
     scheduler.step(metrics['loss'])
     score = metrics[conf.metric]
-    
-    pprint()
 
     if score > best_score:
         torch.save(model.state_dict(), os.path.join(wandb.run.dir, "state_dict.pth"))
         best_score = score
-

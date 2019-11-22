@@ -81,12 +81,11 @@ class BuildingSegmentationDataset(torch.utils.data.Dataset):
         return [get_mask(polygons, self.resolution, self.resolution) for polygons in polygons_by_class]
         
     def __getitem__(self, ix):
-        instance = self.instances[ix]
         image = self.get_image(ix)
         image = cv2.resize(image, (self.resolution, self.resolution))
         
         if self.mode == "dual": # cursed
-            image_post = np.array(Image.open(instance['file_name'].replace('pre', 'post')))
+            image_post = np.array(Image.open(self.instances[ix]['file_name'].replace('pre', 'post')))
             image_post = cv2.resize(image_post, (self.resolution, self.resolution))
         
         mask = self.get_mask(ix)
@@ -191,10 +190,10 @@ class DamageClassificationDataset(torch.utils.data.Dataset):
 
 
 class ImageMaskDataset(BuildingSegmentationDataset):
-    def __init__(self, image_paths, mask_paths, **super_args):
+    def __init__(self, image_paths, mask_paths, *super_args, **super_kwargs):
         self.image_paths = image_paths
         self.mask_paths = mask_paths
-        super().__init__(instances=None, )
+        super().__init__(instances=None, *super_args, **super_kwargs)
         
     def __len__(self):
         return len(self.image_paths)
@@ -203,4 +202,4 @@ class ImageMaskDataset(BuildingSegmentationDataset):
         return np.array(Image.open(self.image_paths[ix]))
     
     def get_mask(self, ix):
-        return np.load(self.mask_paths)
+        return [np.load(self.mask_paths[ix])]
