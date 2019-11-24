@@ -14,6 +14,8 @@ import albumentations as al
 import shapely
 from xv import dataset
 from torch import nn
+from glob import glob
+import pdb
 
 TRAIN_DIR = '../../datasets/xview/train'
 TEST_DIR = '../../datasets/xview/test'
@@ -97,9 +99,9 @@ def load_dmg_img(img_path, image_mean = (0.485, 0.456, 0.406), image_std = (0.22
     image = image.transpose(2,0,1)
     return torch.Tensor(image[None])
 
-def load_training_data(conf, preprocess_fn=None):
-    
-    augment = al.Compose([
+
+def _get_augment(conf):
+    return al.Compose([
         al.HorizontalFlip(p=conf.aug_prob),
         al.VerticalFlip(p=conf.aug_prob),
         al.RandomRotate90(p=conf.aug_prob),
@@ -108,6 +110,40 @@ def load_training_data(conf, preprocess_fn=None):
         al.ShiftScaleRotate(p=conf.aug_prob),
         al.RandomBrightnessContrast(p=conf.aug_prob),
     ])
+
+def _load_training_patch_data(conf, preprocess_fn=None):
+    N_PATCHES = 4
+    train_stems = pd.read_csv('config/train_stems.csv', header=None)[0]
+    train_images = []
+    train_masks = []
+    for stem in train_stems:
+        for patch in range(N_PATCHES):
+            train_images.append(f'{TRAIN_DIR}/images_split/{stem}_{patch}_{conf.data_prefix}_disaster.png')
+            train_masks.append(f'{TRAIN_DIR}/masks_split/{stem}_{patch}_{conf.data_prefix}_disaster.npy')
+    
+    train_dataset = dataset.ImageMaskDataset(
+        image_paths=train_images,
+        mask_paths=train_masks,
+        nclasses=conf.nclasses,
+        resolution=conf.training_resolution,
+        augment=_get_augment(conf),
+        preprocess_fn=preprocess_fn,
+        mode=conf.mode,
+    )
+    
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size=conf.batch_size,
+        shuffle=True,
+        num_workers=conf.n_cpus,
+    )
+    
+    return train_dataset, train_loader
+    
+
+def load_training_data(conf, preprocess_fn=None):
+    if conf.train_patch:
+        return _load_training_patch_data(conf, preprocess_fn)
     
     train_stems = pd.read_csv('config/train_stems.csv', header=None)[0]
     train_files = [f'{TRAIN_DIR}/labels/{stem}_{conf.data_prefix}_disaster.json' for stem in train_stems]
@@ -155,7 +191,7 @@ def load_training_data(conf, preprocess_fn=None):
         instances=train_instances,
         nclasses=conf.nclasses,
         resolution=conf.training_resolution,
-        augment=augment,
+        augment=_get_augment(conf),
         preprocess_fn=preprocess_fn,
         mode=conf.mode,
     )
@@ -178,7 +214,7 @@ def load_dev_data(conf, preprocess_fn=None):
     dev_dataset = dataset.BuildingSegmentationDataset(
         instances=dev_instances,
         nclasses=conf.nclasses,
-        resolution=conf.training_resolution,
+        resolution=conf.eval_resolution,
         augment=None,
         preprocess_fn=preprocess_fn,
         mode=conf.mode,
