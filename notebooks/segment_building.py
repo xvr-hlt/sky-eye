@@ -38,6 +38,12 @@ conf = wandb.config
 pprint(dict(conf))
 
 model, preprocess_fn = io.load_segmentation_model(conf)
+
+if wandb.run.resumed:
+    print("Resuming run.")
+    weights = torch.load(os.path.join(wandb.run.dir, "state_dict.pth"))
+    model.load_state_dict(weights)
+    
 model.to('cuda')
 
 train_dataset, train_loader = io.load_training_data(conf, preprocess_fn)
@@ -52,6 +58,11 @@ optims = {
     'adam': torch.optim.Adam,
     'sgd': torch.optim.SGD
 }
+
+
+# this is not right
+
+lr = conf.lr if not wandb.run.resumed else conf.lr / 10.
 
 optim = optims[conf.optim](model.parameters(), lr=conf.lr)
 
@@ -74,6 +85,8 @@ eval_fn = run.evaluate_segment if conf.nclasses == 1 else run.evaluate_damage
 
 for epoch in range(epoch, conf.epochs):
     print(f"epoch {epoch}/{conf.epochs}.")
+    torch.save(optim.state_dict(), os.path.join(wandb.run.dir, "optim.pth"))
+    torch.save(scheduler.state_dict(), os.path.join(wandb.run.dir, "scheduler.pth"))
     metrics = {'epoch': epoch}
     train_metrics = train_fn(model, optim, train_loader, loss, train_resize=train_resize, mode=conf.mode)
     metrics.update(train_metrics)

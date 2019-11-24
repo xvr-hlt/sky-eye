@@ -1,5 +1,5 @@
 ---
-name: reconf
+name: reconf-restart
 nclasses: 1
 
 data_prefix: pre
@@ -14,7 +14,7 @@ amp_opt_level: O1
 aug_prob: 0.5
 encoder: efficientnet-b6
 loss_weights: {jaccard: 1, focal: 4}
-lr: 0.0005
+lr: 0.00001 #0.0005
 optim: adam
 scheduler_factor: 0.5
 scheduler_patience: 5
@@ -30,7 +30,7 @@ add_tertiary: False
 project: sky-eye-full
 freeze_encoder_norm: False
 freeze_decoder_norm: False
-load_weights: False
+load_weights: '/home/jupyter/sky-eye/notebooks/wandb/run-20191122_035516-ph4c64ar/state_dict.pth'
 sync_bn: True
 train_patch: True
 n_cpus: 10
