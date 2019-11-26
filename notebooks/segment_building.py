@@ -1,6 +1,6 @@
 from xv import run
 from torchvision.ops import misc as misc_nn_ops
-#from apex import amp
+from apex import amp
 from torch.nn.modules.loss import CrossEntropyLoss
 from xv.nn.losses import loss_dict, WeightedLoss
 from pytorch_toolbelt import losses
@@ -67,7 +67,7 @@ lr = conf.lr if not wandb.run.resumed else conf.lr / 10.
 optim = optims[conf.optim](model.parameters(), lr=conf.lr)
 
 
-# model, optim = amp.initialize(model, optim, opt_level=conf.amp_opt_level)
+model, optim = amp.initialize(model, optim, opt_level=conf.amp_opt_level)
 
 
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(

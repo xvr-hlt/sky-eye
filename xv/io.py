@@ -62,7 +62,7 @@ def load_segmentation_model(conf, state_file=None):
 
     if state_file is not None:
         state_dict = torch.load(state_file)
-        model.load_state_dict(state_dict)
+        print(model.load_state_dict(state_dict))
         
     if torch.cuda.device_count() > 1:
         #if conf.sync_bn:
