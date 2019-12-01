@@ -39,11 +39,6 @@ conf = wandb.config
 pprint(dict(conf))
 
 model, preprocess_fn = io.load_segmentation_model(conf)
-
-if wandb.run.resumed:
-    print("Resuming run.")
-    weights = torch.load(os.path.join(wandb.run.dir, "state_dict.pth"))
-    model.load_state_dict(weights)
     
 model.to('cuda')
 
@@ -60,23 +55,22 @@ optims = {
     'sgd': torch.optim.SGD
 }
 
-
-# this is not right
-
-lr = conf.lr if not wandb.run.resumed else conf.lr / 10.
-
 optim = optims[conf.optim](model.parameters(), lr=conf.lr)
 
 
 model, optim = amp.initialize(model, optim, opt_level=conf.amp_opt_level)
 
-"""
+if torch.cuda.device_count() > 1:
+    #if conf.sync_bn:
+    #    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    model = nn.DataParallel(model)
+    #torch.distributed.init_process_group(backend="nccl")
+    #model = nn.DistributedDataParallel(model)
+
+
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
     optim, factor=conf.scheduler_factor, patience=conf.scheduler_patience
 )
-"""
-scheduler_cosine = torch.optim.lr_scheduler.CosineAnnealingLR(optim, 100)
-scheduler = GradualWarmupScheduler(optim, multiplier=8, total_epoch=10, after_scheduler=scheduler_cosine)
 
 train_resize = run.MultiScaleResize(conf.mode, conf.training_scales)
 
@@ -108,7 +102,7 @@ for epoch in range(epoch, conf.epochs):
     #scheduler.step(metrics['loss'])
     scheduler.step()
     score = metrics[conf.metric]
-
+    pprint(metrics)
     if score > best_score:
         torch.save(model.state_dict(), os.path.join(wandb.run.dir, "state_dict.pth"))
         best_score = score

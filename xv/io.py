@@ -70,13 +70,6 @@ def load_segmentation_model(conf, state_file=None):
     if state_file is not None:
         state_dict = torch.load(state_file)
         print(model.load_state_dict(state_dict))
-        
-    if torch.cuda.device_count() > 1:
-        #if conf.sync_bn:
-        #    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-        model = nn.DataParallel(model)
-        #torch.distributed.init_process_group(backend="nccl")
-        #model = nn.DistributedDataParallel(model)
 
     preprocess_fn = get_preprocessing_fn(conf.encoder)
         
