@@ -1,7 +1,7 @@
 --- 
 nclasses: 4
 data_prefix: post
-run_name: building_damage
+name: se101
 batch_size: 6
 aug_prob: 0.5
 training_scales: [1,]
