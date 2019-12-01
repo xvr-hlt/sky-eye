@@ -1,3 +1,2 @@
 -e .
-git+https://github.com/qubvel/segmentation_models.pytorch
-
+git+https://github.com/qubvel/segmentation_models.pytorch@378431bac2741c1d80ec81aa8563660fb1f02ceb

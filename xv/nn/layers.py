@@ -1,10 +1,10 @@
 from torch import nn
 import torch
 
-## Taken verbatim from Detectron2
 
 class FrozenBatchNorm2d(nn.Module):
     """
+    From Detectron2::
     BatchNorm2d where the batch statistics and the affine parameters are fixed.
     It contains non-trainable buffers called
     "weight" and "bias", "running_mean", "running_var",
@@ -91,3 +91,19 @@ class FrozenBatchNorm2d(nn.Module):
                 if new_child is not child:
                     res.add_module(name, new_child)
         return res
+    
+    
+
+def convert_groupnorm(module, n_groups=16):
+    res = module
+    if isinstance(module, (nn.BatchNorm2d, nn.SyncBatchNorm)):
+        nf = module.num_features
+        group_size = int(round(nf/n_groups))
+        n_groups_ = nf // group_size
+        res = nn.GroupNorm(n_groups_, nf)
+    else:
+        for name, child in module.named_children():
+            new_child = convert_groupnorm(child, n_groups)
+            if new_child is not child:
+                res.add_module(name, new_child)
+    return res

@@ -22,6 +22,7 @@ import wandb
 import yaml
 from xv import io
 from pprint import pprint
+from warmup_scheduler import GradualWarmupScheduler
 
 
 conf_file = "config/config-seg.yaml"
@@ -69,10 +70,13 @@ optim = optims[conf.optim](model.parameters(), lr=conf.lr)
 
 model, optim = amp.initialize(model, optim, opt_level=conf.amp_opt_level)
 
-
+"""
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
     optim, factor=conf.scheduler_factor, patience=conf.scheduler_patience
 )
+"""
+scheduler_cosine = torch.optim.lr_scheduler.CosineAnnealingLR(optim, 100)
+scheduler = GradualWarmupScheduler(optim, multiplier=8, total_epoch=10, after_scheduler=scheduler_cosine)
 
 train_resize = run.MultiScaleResize(conf.mode, conf.training_scales)
 
@@ -101,7 +105,8 @@ for epoch in range(epoch, conf.epochs):
     """
     
     wandb.log(metrics)
-    scheduler.step(metrics['loss'])
+    #scheduler.step(metrics['loss'])
+    scheduler.step()
     score = metrics[conf.metric]
 
     if score > best_score:
