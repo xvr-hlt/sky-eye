@@ -38,11 +38,6 @@ conf = wandb.config
 pprint(dict(conf))
 
 model, preprocess_fn = io.load_segmentation_model(conf)
-
-if wandb.run.resumed:
-    print("Resuming run.")
-    weights = torch.load(os.path.join(wandb.run.dir, "state_dict.pth"))
-    model.load_state_dict(weights)
     
 model.to('cuda')
 
@@ -68,6 +63,13 @@ optim = optims[conf.optim](model.parameters(), lr=conf.lr)
 
 
 model, optim = amp.initialize(model, optim, opt_level=conf.amp_opt_level)
+
+if torch.cuda.device_count() > 1:
+    #if conf.sync_bn:
+    #    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    model = nn.DataParallel(model)
+    #torch.distributed.init_process_group(backend="nccl")
+    #model = nn.DistributedDataParallel(model)
 
 
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
