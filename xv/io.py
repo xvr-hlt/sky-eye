@@ -2,10 +2,10 @@ import yaml
 import json
 import segmentation_models_pytorch as smp
 from segmentation_models_pytorch.encoders import get_preprocessing_fn
-from xv.nn.layers import FrozenBatchNorm2d
+from xv.nn.layers import FrozenBatchNorm2d, convert_groupnorm
 import torch
 from xv.nn.nets import BoxClassifier
-from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
+from torchvision.models.detection.backbone_utils import resnet_fpn_backbone, resnet, BackboneWithFPN
 from PIL import Image
 import numpy as np
 import pandas as pd
@@ -16,6 +16,9 @@ from xv import dataset
 from torch import nn
 from glob import glob
 import pdb
+import albumentations as al
+from albumentations import BboxParams
+import logging
 
 TRAIN_DIR = '../../datasets/xview/train'
 TEST_DIR = '../../datasets/xview/test'
@@ -30,9 +33,13 @@ class Config:
             elif file_path.name.endswith('.yaml'):
                 _conf = yaml.load(file_path)
                 if 'wandb_version' in _conf:
-                    _conf = {k:v['value'] for k,v in _conf.items() if isinstance(v,dict) and 'value' in v}
+                    _conf = {k:v['value'] for k,v in _conf.items() if isinstance(v, dict) and 'value' in v}
             for k,v in _conf.items():
                 setattr(self, k, v)
+                
+    def __getattr__(self, name):
+        logging.warning(f"Attribute {name} not found in conf.")
+        return None
 
 def load_segmentation_model(conf, state_file=None):
     segmentation_types = {
@@ -50,7 +57,7 @@ def load_segmentation_model(conf, state_file=None):
         attention_type=conf.attention
     )
     
-    if conf.load_weights:
+    if conf.load_weights and state_file is None:
         state_dict = torch.load(conf.load_weights)
         print(model.load_state_dict(state_dict))
     
@@ -68,14 +75,26 @@ def load_segmentation_model(conf, state_file=None):
         
     return model, preprocess_fn
 
+def load_damage_model(conf, state_file=None):
+    
+    model = BoxClassifier(**conf.model_params)
+        
+    if conf.pretrain_weights and state_file is None:
+        state_dict = torch.load(conf.pretrain_weights)
+        print(model.load_state_dict(state_dict))
+        
+    if conf.freeze_backbone_norm:
+        model.encoder = FrozenBatchNorm2d.convert_frozen_batchnorm(model.encoder)
+    
+    if conf.convert_groupnorm:
+        model = convert_groupnorm(model)
+    
+    if state_file is not None:
+        state_dict = torch.load(state_file)
+        print(model.load_state_dict(state_dict))
 
-def load_damage_model(conf, state_file):
-    backbone = resnet_fpn_backbone(conf.backbone, True)
-    model = BoxClassifier(backbone, conf.nclasses)
-    state_dict = torch.load(state_file)
-    model.load_state_dict(state_dict)
-    model = model.eval().cuda()
     return model
+
 
 def load_img(img_path, preprocess_fn):
     image = np.array(Image.open(img_path))
@@ -221,3 +240,77 @@ def load_dev_data(conf, preprocess_fn=None):
     )
     
     return dev_dataset, dev_loader
+
+def get_damage_loaders(conf):
+    augment = al.Compose([
+        al.HorizontalFlip(p=conf.aug_prob),
+        al.VerticalFlip(p=conf.aug_prob),
+        al.RandomRotate90(p=conf.aug_prob),
+        al.Transpose(p=conf.aug_prob),
+        al.RandomBrightnessContrast(p=conf.aug_prob),
+        al.Rotate(p=conf.aug_prob),
+    ],  bbox_params=BboxParams('pascal_voc', label_fields = ['labels'], min_visibility=conf.min_bbox_visibility))
+
+
+    train_stems = pd.read_csv('config/train_stems.csv', header=None)[0]
+    dev_stems = pd.read_csv('config/dev_stems.csv', header=None)[0]
+
+    train_files = [f'{TRAIN_DIR}/labels/{stem}_{conf.data_prefix}_disaster.json' for stem in train_stems]
+    dev_files = [f'{TRAIN_DIR}/labels/{stem}_{conf.data_prefix}_disaster.json' for stem in dev_stems]
+
+    train_instances = dataset.get_instances(train_files, filter_none=conf.filter_none)
+    dev_instances = dataset.get_instances(dev_files, filter_none=conf.filter_none)
+
+    print("train/dev instances: ", len(train_instances), len(dev_instances))
+
+
+    if conf.add_suppl:
+        train_instances *= conf.train_repeat
+        suppl_files = glob(f'{SUPPL_DIR}/labels/*{conf.data_prefix}_disaster.json')
+        suppl_instances = dataset.get_instances(suppl_files, filter_none=conf.filter_none)
+        train_instances += suppl_instances
+        print(len(train_instances))
+
+
+    train_dataset = dataset.DamageClassificationDataset(
+        train_instances,
+        conf.nclasses,
+        augment=augment
+    )
+
+    dev_dataset = dataset.DamageClassificationDataset(
+        dev_instances,
+        conf.nclasses,
+        augment=None
+    )
+
+
+    def collate(batch):
+        include = [len(bx) > 0 for _, bx, _ in batch]
+        ims = torch.stack([torch.Tensor(ims) for ims, _, _ in batch])[include]
+        bxs, clss = [], []
+        for _, bx, cl in batch:
+            if len(bx) == 0:
+                continue
+            bxs.append(torch.Tensor(bx))
+            clss.append(torch.Tensor(cl))
+        return ims, bxs, clss
+
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size=conf.batch_size,
+        shuffle=True,
+        num_workers=10,
+        collate_fn=collate
+    )
+
+    dev_loader = torch.utils.data.DataLoader(
+        dev_dataset,
+        batch_size=conf.batch_size,
+        shuffle=False,
+        num_workers=10,
+        collate_fn=collate
+    )
+    
+    return train_loader, dev_loader
+

@@ -22,6 +22,7 @@ import wandb
 import yaml
 from xv import io
 from pprint import pprint
+from warmup_scheduler import GradualWarmupScheduler
 
 
 conf_file = "config/config-seg.yaml"
@@ -53,11 +54,6 @@ optims = {
     'adam': torch.optim.Adam,
     'sgd': torch.optim.SGD
 }
-
-
-# this is not right
-
-lr = conf.lr if not wandb.run.resumed else conf.lr / 10.
 
 optim = optims[conf.optim](model.parameters(), lr=conf.lr)
 
@@ -103,7 +99,8 @@ for epoch in range(epoch, conf.epochs):
     """
     
     wandb.log(metrics)
-    scheduler.step(metrics['loss'])
+    #scheduler.step(metrics['loss'])
+    scheduler.step()
     score = metrics[conf.metric]
     pprint(metrics)
     if score > best_score:

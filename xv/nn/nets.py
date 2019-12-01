@@ -2,21 +2,29 @@ from xv.nn.oc import oc
 import torch
 from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
+import segmentation_models_pytorch as smp
 from torchvision.models.detection.faster_rcnn import TwoMLPHead
+from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork, LastLevelMaxPool
+from collections import OrderedDict
 
 
 class BoxClassifier(nn.Module):
-    def __init__(self, backbone, nclasses, featmap_names=[0, 1, 2, 3]):
+    def __init__(self, encoder_name, nclasses=4, features=(4,3,2,1), out_channels=256):
         super().__init__()
-        self.backbone = backbone
+        self.encoder = smp.encoders.get_encoder(encoder_name, 'imagenet')
+        self.features = features
+        
+        out_shapes = smp.encoders.encoders[encoder_name]['out_shapes']
+        self.fpn = FeaturePyramidNetwork([out_shapes[f] for f in features],
+                                         out_channels,
+                                         extra_blocks=LastLevelMaxPool())
 
         self.roi_pool = MultiScaleRoIAlign(
-            featmap_names=featmap_names,
+            featmap_names=features,
             output_size=7,
             sampling_ratio=2
         )
 
-        out_channels = self.backbone.out_channels
         resolution = self.roi_pool.output_size[0]
         representation_size = 1024
         self.box_head = TwoMLPHead(out_channels * resolution ** 2, representation_size)
@@ -25,10 +33,14 @@ class BoxClassifier(nn.Module):
     def forward(self, x, boxes):
         i, _, w, h = x.shape
         sizes = [(w, h) for _ in range(i)]
-        x = self.backbone(x)
+        
+        x = self.encoder(x)
+        x = OrderedDict((i, x[i]) for i in self.features)
+        x = self.fpn(x)
         x = self.roi_pool(x, boxes, sizes)
         x = self.box_head(x)
         x = self.head(x)
+        
         return x
 
 
