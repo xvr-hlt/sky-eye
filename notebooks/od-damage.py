@@ -74,8 +74,6 @@ epoch, best_score = 0, 0
 
 
 for epoch in range(epoch, conf.epochs):
-    torch.save(optim.state_dict(), os.path.join(wandb.run.dir, "optim.pth"))
-    torch.save(scheduler.state_dict(), os.path.join(wandb.run.dir, "scheduler.pth"))
     metrics = {'epoch': epoch}
     train_metrics = run_damage.run(model, optim, train_loader, train_resize, loss_fn)
     metrics.update(train_metrics)
@@ -84,9 +82,12 @@ for epoch in range(epoch, conf.epochs):
     metrics.update(dev_metrics)
     
     wandb.log(metrics)
-    scheduler.step(metrics['loss'])
     score = metrics[conf.metric]
+    scheduler.step(-score)
+    
     
     if score > best_score:
         torch.save(model.state_dict(), os.path.join(wandb.run.dir, "state_dict.pth"))
+        torch.save(optim.state_dict(), os.path.join(wandb.run.dir, "optim.pth"))
+        torch.save(scheduler.state_dict(), os.path.join(wandb.run.dir, "scheduler.pth"))
         best_score = score
