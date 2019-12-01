@@ -26,7 +26,10 @@ from apex import amp
 run_type = 'building-damage'
 conf_file = 'config/config-damage-od.yaml'
 
-wandb.init(project=run_type, config=yaml.load(open(conf_file)))
+with open(conf_file) as f:
+    conf_init = yaml.load(f)
+
+wandb.init(project=run_type, config=conf_init, name=conf_init['name'])
 conf = wandb.config
 pprint(dict(conf))
 
