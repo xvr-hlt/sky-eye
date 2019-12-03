@@ -94,13 +94,18 @@ class FrozenBatchNorm2d(nn.Module):
     
     
 
-def convert_groupnorm(module, n_groups=16):
+def convert_groupnorm(module, n_groups=32):
     res = module
     if isinstance(module, (nn.BatchNorm2d, nn.SyncBatchNorm)):
         nf = module.num_features
-        group_size = int(round(nf/n_groups))
-        n_groups_ = nf // group_size
-        res = nn.GroupNorm(n_groups_, nf)
+        for i in range(max(int(nf**0.5) + 1, n_groups), 1, -1):
+            div, mod = divmod(nf, i)
+            if mod == 0:
+                ng = i
+                break
+        else:
+            raise Exception("You broke prime factorisation.")
+        res = nn.GroupNorm(ng, nf)
     else:
         for name, child in module.named_children():
             new_child = convert_groupnorm(child, n_groups)

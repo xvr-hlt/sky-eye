@@ -85,6 +85,9 @@ def load_damage_model(conf, state_file=None):
         
     if conf.freeze_backbone_norm:
         model.encoder = FrozenBatchNorm2d.convert_frozen_batchnorm(model.encoder)
+        
+    if conf.freeze_model_norm:
+        model = FrozenBatchNorm2d.convert_frozen_batchnorm(model)
     
     if conf.convert_groupnorm:
         model = convert_groupnorm(model)

@@ -25,6 +25,7 @@ from apex import amp
 
 run_type = 'building-damage'
 conf_file = 'config/config-damage-od.yaml'
+#conf_file = 'config/config-damage-od-finetune.yaml'
 
 with open(conf_file) as f:
     conf_init = yaml.load(f)
