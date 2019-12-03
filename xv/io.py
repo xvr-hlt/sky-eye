@@ -278,13 +278,15 @@ def get_damage_loaders(conf):
     train_dataset = dataset.DamageClassificationDataset(
         train_instances,
         conf.nclasses,
-        augment=augment
+        augment=augment,
+        resolution=conf.resolution
     )
 
     dev_dataset = dataset.DamageClassificationDataset(
         dev_instances,
         conf.nclasses,
-        augment=None
+        augment=None,
+        resolution=conf.resolution
     )
 
 

@@ -84,18 +84,11 @@ class BuildingSegmentationDataset(torch.utils.data.Dataset):
         image = self.get_image(ix)
         image = cv2.resize(image, (self.resolution, self.resolution))
         
-        if self.mode == "dual": # cursed
-            image_post = np.array(Image.open(self.instances[ix]['file_name'].replace('pre', 'post')))
-            image_post = cv2.resize(image_post, (self.resolution, self.resolution))
         
         mask = self.get_mask(ix)
         
         if self.augment:
-            if self.mode == "dual":
-                aug = self.augment(image=image, image_post=image_post, masks=mask)
-                image_post = aug['image_post']
-            else:
-                aug = self.augment(image=image, masks=mask)
+            aug = self.augment(image=image, masks=mask)
             image, mask = aug['image'], aug['masks']
         
         mask = np.stack(mask)
@@ -136,9 +129,11 @@ class BuildingSegmentationDataset(torch.utils.data.Dataset):
     
     
 class DamageClassificationDataset(torch.utils.data.Dataset):
-    def __init__(self, instances, nclasses, augment=None, image_mean = (0.485, 0.456, 0.406), image_std = (0.229, 0.224, 0.225)):
+    def __init__(self, instances, nclasses,
+                 resolution=1024, augment=None, image_mean = (0.485, 0.456, 0.406), image_std = (0.229, 0.224, 0.225)):
         super().__init__()
         self.instances = instances
+        self.resolution = resolution
         self.nclasses = nclasses
         self.augment = augment
         self.image_mean = image_mean
@@ -147,6 +142,7 @@ class DamageClassificationDataset(torch.utils.data.Dataset):
     def __getitem__(self, ix):
         instance = self.instances[ix]
         image = np.array(Image.open(instance['file_name']))
+        image = cv2.resize(image, (self.resolution, self.resolution))
         
         boxes, labels = [], []
         
