@@ -22,8 +22,8 @@ import wandb
 import yaml
 from xv import io
 from pprint import pprint
-from warmup_scheduler import GradualWarmupScheduler
-
+import cv2
+cv2.setNumThreads(0)
 
 conf_file = "config/config-seg.yaml"
 # conf_file = "config/config-seg-finetune.yaml"
@@ -39,7 +39,6 @@ conf = wandb.config
 pprint(dict(conf))
 
 model, preprocess_fn = io.load_segmentation_model(conf)
-    
 model.to('cuda')
 
 train_dataset, train_loader = io.load_training_data(conf, preprocess_fn)
@@ -100,8 +99,9 @@ for epoch in range(epoch, conf.epochs):
     
     wandb.log(metrics)
     #scheduler.step(metrics['loss'])
-    scheduler.step()
+    #scheduler.step()
     score = metrics[conf.metric]
+    scheduler.step(-score)
     pprint(metrics)
     if score > best_score:
         torch.save(model.state_dict(), os.path.join(wandb.run.dir, "state_dict.pth"))
