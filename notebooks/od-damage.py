@@ -89,6 +89,7 @@ for epoch in range(epoch, conf.epochs):
     score = metrics[conf.metric]
     scheduler.step(-score)
     
+    torch.save(model.state_dict(), os.path.join(wandb.run.dir, "last_state_dict.pth"))
     
     if score > best_score:
         torch.save(model.state_dict(), os.path.join(wandb.run.dir, "state_dict.pth"))
