@@ -22,10 +22,10 @@ import wandb
 import yaml
 from xv import io
 from pprint import pprint
-from warmup_scheduler import GradualWarmupScheduler
 
 
-conf_file = "config/config-seg.yaml"
+#conf_file = "config/config-seg.yaml"
+conf_file = "config/config-damage.yaml"
 # conf_file = "config/config-seg-finetune.yaml"
 # conf_file = "config/config-seg-joint.yaml"
 
@@ -99,9 +99,8 @@ for epoch in range(epoch, conf.epochs):
     """
     
     wandb.log(metrics)
-    #scheduler.step(metrics['loss'])
-    scheduler.step()
     score = metrics[conf.metric]
+    scheduler.step(-score)
     pprint(metrics)
     if score > best_score:
         torch.save(model.state_dict(), os.path.join(wandb.run.dir, "state_dict.pth"))
