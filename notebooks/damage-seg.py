@@ -22,9 +22,7 @@ import wandb
 import yaml
 from xv import io
 from pprint import pprint
-import cv2
 
-cv2.setNumThreads(0)
 
 #conf_file = "config/config-seg.yaml"
 conf_file = "config/config-damage.yaml"
@@ -41,6 +39,7 @@ conf = wandb.config
 pprint(dict(conf))
 
 model, preprocess_fn = io.load_segmentation_model(conf)
+    
 model.to('cuda')
 
 train_dataset, train_loader = io.load_training_data(conf, preprocess_fn)
@@ -49,7 +48,11 @@ dev_dataset, dev_loader = io.load_dev_data(conf, preprocess_fn)
 print(f"n_train: {len(train_dataset)}")
 print(f"n_dev: {len(dev_dataset)}")
 
-loss = WeightedLoss({loss_dict[l](): w for l, w in conf.loss_weights.items()})
+weights = torch.Tensor(conf.class_weight).float().cuda()
+loss = CrossEntropyLoss(weights, reduction=conf.loss_reduce_mode)
+
+
+#loss = WeightedLoss({loss_dict[l](): w for l, w in conf.loss_weights.items()})
 
 optims = {
     'adam': torch.optim.Adam,
@@ -92,11 +95,13 @@ for epoch in range(epoch, conf.epochs):
 
     dev_metrics = eval_fn(model, dev_loader, loss, mode=conf.mode)
     metrics.update(dev_metrics)
+    
     """
     if conf.mode != "dual":
         examples = run.sample_masks(model, dev_dataset.instances, preprocess_fn, n=1)
         metrics['examples'] = [wandb.Image(im, caption=f'mask:{ix}') for e in examples for ix, im in enumerate(e)]
     """
+    
     wandb.log(metrics)
     score = metrics[conf.metric]
     scheduler.step(-score)
@@ -104,3 +109,4 @@ for epoch in range(epoch, conf.epochs):
     if score > best_score:
         torch.save(model.state_dict(), os.path.join(wandb.run.dir, "state_dict.pth"))
         best_score = score
+

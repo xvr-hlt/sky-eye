@@ -148,6 +148,7 @@ def _load_training_patch_data(conf, preprocess_fn=None):
     
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
+        pin_memory=True,
         batch_size=conf.batch_size,
         shuffle=True,
         num_workers=conf.n_cpus,
@@ -213,6 +214,7 @@ def load_training_data(conf, preprocess_fn=None):
     
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
+        pin_memory=True,
         batch_size=conf.batch_size,
         shuffle=True,
         num_workers=conf.n_cpus,
@@ -239,6 +241,7 @@ def load_dev_data(conf, preprocess_fn=None):
         dev_dataset,
         batch_size=conf.batch_size,
         shuffle=False,
+        pin_memory=True,
         num_workers=conf.n_cpus,
     )
     
@@ -305,6 +308,7 @@ def get_damage_loaders(conf):
         train_dataset,
         batch_size=conf.batch_size,
         shuffle=True,
+        pin_memory=True,
         num_workers=10,
         collate_fn=collate
     )
