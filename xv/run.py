@@ -74,6 +74,8 @@ def train_damage(model, optim, data, loss_fn, train_resize=None, mode=None):
         if mode == 'categorical':
             _, nclasses, _, _ = outputs.shape
             mask_bool, mask = mask
+            if mask_bool.sum() == 0:
+                continue
             loss = loss_fn(outputs.permute(0,2,3,1)[mask_bool], mask[mask_bool].cuda())
         else:
             loss = loss_fn(outputs, mask)
@@ -116,6 +118,8 @@ def evaluate_damage(model, data, loss_fn, threshold=0.5, nclasses=4, mode=None):
         
         if mode == "categorical":
             mask_bool, mask = mask
+            if mask_bool.sum() == 0:
+                continue
             loss += loss_fn(outputs.permute(0,2,3,1)[mask_bool], mask[mask_bool].cuda())
             
         mask = np.array(mask.cpu())

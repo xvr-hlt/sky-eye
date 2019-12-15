@@ -8,11 +8,11 @@ training_scales: [1.]
 training_resolution: 1024
 eval_resolution: 1024
 
-segmentation_arch: Unet
+segmentation_arch: FPN
 attention: scse
 amp_opt_level: O1
 aug_prob: 0.4
-encoder: efficientnet-b3
+encoder: efficientnet-b4
 loss_weights: {ce: 1} #, focal: 4}
 class_weight: [1,3,2,2]
 lr: 0.0001 #0.0005
