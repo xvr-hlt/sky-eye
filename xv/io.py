@@ -51,11 +51,18 @@ def load_segmentation_model(conf, state_file=None):
     
     model_classes = conf.nclasses
 
-    model = segmentation_types[conf.segmentation_arch](
-        conf.encoder,
-        classes=model_classes,
-        attention_type=conf.attention
-    )
+    if conf.segmentation_arch == 'Unet':
+        model = segmentation_types[conf.segmentation_arch](
+            conf.encoder,
+            classes=model_classes,
+            attention_type=conf.attention
+        )
+    else: # :|
+        model = segmentation_types[conf.segmentation_arch](
+            conf.encoder,
+            classes=model_classes,
+        )
+        
     
     if conf.load_weights and state_file is None:
         state_dict = torch.load(conf.load_weights)

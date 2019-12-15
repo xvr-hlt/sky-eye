@@ -5,3 +5,5 @@
 *.pth
 wandb/
 *.egg-info
+submissions/
+notebooks/wandb/
