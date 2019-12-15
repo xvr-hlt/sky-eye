@@ -23,6 +23,9 @@ import yaml
 from xv import io
 from pprint import pprint
 
+import cv2
+
+cv2.setNumThreads(0)
 
 #conf_file = "config/config-seg.yaml"
 conf_file = "config/config-damage.yaml"

@@ -26,8 +26,8 @@ import cv2
 
 cv2.setNumThreads(0)
 
-#conf_file = "config/config-seg.yaml"
-conf_file = "config/config-damage.yaml"
+conf_file = "config/config-seg.yaml"
+#conf_file = "config/config-damage.yaml"
 # conf_file = "config/config-seg-finetune.yaml"
 # conf_file = "config/config-seg-joint.yaml"
 
