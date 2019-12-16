@@ -25,20 +25,18 @@ from pprint import pprint
 
 import cv2
 
+# os.environ['WANDB_MODE'] = 'dryrun'
+
 cv2.setNumThreads(0)
 
-#conf_file = "config/config-seg.yaml"
 conf_file = "config/config-damage.yaml"
-# conf_file = "config/config-seg-finetune.yaml"
-# conf_file = "config/config-seg-joint.yaml"
 
 with open(conf_file) as f:
     conf_init = yaml.load(f)
 
-#os.environ['WANDB_MODE'] = 'dryrun'
 wandb.init(project=conf_init['project'], config=conf_init, name=conf_init['name'])
-conf = wandb.config
 
+conf = wandb.config
 pprint(dict(conf))
 
 model, preprocess_fn = io.load_segmentation_model(conf)
@@ -98,12 +96,6 @@ for epoch in range(epoch, conf.epochs):
 
     dev_metrics = eval_fn(model, dev_loader, loss, mode=conf.mode)
     metrics.update(dev_metrics)
-    
-    """
-    if conf.mode != "dual":
-        examples = run.sample_masks(model, dev_dataset.instances, preprocess_fn, n=1)
-        metrics['examples'] = [wandb.Image(im, caption=f'mask:{ix}') for e in examples for ix, im in enumerate(e)]
-    """
     
     wandb.log(metrics)
     score = metrics[conf.metric]

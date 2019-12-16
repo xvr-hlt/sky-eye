@@ -22,12 +22,14 @@ class MultiScaleResize(nn.Module):
         scale = random.choice(self.scales)
         if scale == 1.:
             return batch
+
         if self.mode is None or self.mode == "dual":
             im, mask = batch
             mask_dtype = mask.dtype
             im = torch.nn.functional.interpolate(im, scale_factor=scale, mode='bilinear', align_corners=False)
             mask = misc_nn_ops.interpolate(mask.float(), scale_factor=scale).to(mask_dtype)
             return im, mask
+
         if self.mode == "categorical":
             im, (damage_mask, damage) = batch
             dmg_msk_dtype = damage_mask.dtype()

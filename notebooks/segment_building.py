@@ -27,9 +27,6 @@ import cv2
 cv2.setNumThreads(0)
 
 conf_file = "config/config-seg.yaml"
-#conf_file = "config/config-damage.yaml"
-# conf_file = "config/config-seg-finetune.yaml"
-# conf_file = "config/config-seg-joint.yaml"
 
 with open(conf_file) as f:
     conf_init = yaml.load(f)
@@ -92,11 +89,6 @@ for epoch in range(epoch, conf.epochs):
 
     dev_metrics = eval_fn(model, dev_loader, loss, mode=conf.mode)
     metrics.update(dev_metrics)
-    """
-    if conf.mode != "dual":
-        examples = run.sample_masks(model, dev_dataset.instances, preprocess_fn, n=1)
-        metrics['examples'] = [wandb.Image(im, caption=f'mask:{ix}') for e in examples for ix, im in enumerate(e)]
-    """
     wandb.log(metrics)
     score = metrics[conf.metric]
     scheduler.step(-score)

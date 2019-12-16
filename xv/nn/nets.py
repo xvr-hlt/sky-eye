@@ -74,26 +74,38 @@ class OCSegment(nn.Module):
 
 
 class DualWrapper(nn.Module):
-    def __init__(self, m, channels_in=16):
+    INNER_CHANNELS_DEFAULT = 128
+    
+    def __init__(self, m, inner_channels=None):
         super().__init__()
+        
+        inner_channels = inner_channels or self.INNER_CHANNELS_DEFAULT
+        
+        channels_in = m.decoder.final_conv.in_channels
+        channels_out = m.decoder.final_conv.out_channels
+        
+        m.decoder.final_conv = nn.Identity()
+        
         self._model = m
 
         self.pre_mixin = nn.Sequential(
-            nn.Conv2d(channels_in, channels_in, kernel_size=1),
-            nn.BatchNorm2d(channels_in),
+            nn.Conv2d(channels_in, inner_channels, kernel_size=1),
+            nn.BatchNorm2d(inner_channels),
             nn.ReLU()
         )
 
         self.post_mixin = nn.Sequential(
-            nn.Conv2d(channels_in, channels_in, kernel_size=1),
-            nn.BatchNorm2d(channels_in),
+            nn.Conv2d(channels_in, inner_channels, kernel_size=1),
+            nn.BatchNorm2d(inner_channels),
             nn.ReLU()
         )
+        
+        self.head = nn.Conv2d(inner_channels, channels_out, kernel_size=1)
 
     def forward(self, x):
         pre, post = x[:, :3], x[:, 3:]
-
-        pre_out = self.pre_mixin(self._model.decoder(*self._model.encoder(pre)))
-        post_out = self.post_mixin(self._model.decoder(*self._model.encoder(post)))
-
-        return self._model.segmentation_head(pre_out + post_out)
+        
+        pre_out = self.pre_mixin(self._model.decoder(self._model.encoder(pre)))
+        post_out = self.post_mixin(self._model.decoder(self._model.encoder(post)))
+        
+        return self.head(post_out - pre_out)

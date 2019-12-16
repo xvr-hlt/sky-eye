@@ -4,7 +4,7 @@ import segmentation_models_pytorch as smp
 from segmentation_models_pytorch.encoders import get_preprocessing_fn
 from xv.nn.layers import FrozenBatchNorm2d, convert_groupnorm
 import torch
-from xv.nn.nets import BoxClassifier
+from xv.nn.nets import BoxClassifier, DualWrapper
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone, resnet, BackboneWithFPN
 from PIL import Image
 import numpy as np
@@ -55,7 +55,7 @@ def load_segmentation_model(conf, state_file=None):
     
     for k in {'attention_type', 'decoder_segmentation_channels', 'decoder_pyramid_channels'}:
         try:
-            models_kwargs[k] = conf.__getattribute__(k)
+            model_kwargs[k] = conf.__getattribute__(k)
         except AttributeError:
             continue
         
@@ -76,7 +76,10 @@ def load_segmentation_model(conf, state_file=None):
         print(model.load_state_dict(state_dict))
 
     preprocess_fn = get_preprocessing_fn(conf.encoder)
-        
+    
+    if conf.dual_input:
+        model = DualWrapper(model, conf.dual_head_channels)
+    
     return model, preprocess_fn
 
 def load_damage_model(conf, state_file=None):
@@ -214,6 +217,7 @@ def load_training_data(conf, preprocess_fn=None):
         augment=_get_augment(conf),
         preprocess_fn=preprocess_fn,
         mode=conf.mode,
+        dual_input=conf.dual_input
     )
     
     train_loader = torch.utils.data.DataLoader(
@@ -239,6 +243,7 @@ def load_dev_data(conf, preprocess_fn=None):
         augment=None,
         preprocess_fn=preprocess_fn,
         mode=conf.mode,
+        dual_input=conf.dual_input
     )
 
     dev_loader = torch.utils.data.DataLoader(
@@ -272,7 +277,6 @@ def get_damage_loaders(conf):
     dev_instances = dataset.get_instances(dev_files, filter_none=conf.filter_none)
 
     print("train/dev instances: ", len(train_instances), len(dev_instances))
-
 
     if conf.add_suppl:
         train_instances *= conf.train_repeat

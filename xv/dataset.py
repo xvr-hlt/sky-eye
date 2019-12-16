@@ -58,21 +58,30 @@ def get_mask(polygons, w, h):
     for polygon in polygons:
         draw.polygon(tuple((x*w, y*h) for x,y in polygon), outline=1, fill=1)
     return np.array(img).astype(np.float32)
+
     
 class BuildingSegmentationDataset(torch.utils.data.Dataset):
-    def __init__(self, instances, nclasses, augment=None, resolution=1024, preprocess_fn=None, mode=None):
+    def __init__(self, instances, nclasses, augment=None, resolution=1024, preprocess_fn=None, dual_input=False, mode=None):
         super().__init__()
         self.instances = instances
         self.nclasses = nclasses
         self.augment = augment
         self.preprocess_fn = preprocess_fn
         self.resolution = resolution
+        self.dual_input = dual_input
         self.mode = mode
-        if self.mode == 'dual' and self.augment:
+        if self.dual_input and self.augment:
             self.augment.add_targets({'image_post': 'image'})
-            
+
+
     def get_image(self, ix):
-        return np.array(Image.open(self.instances[ix]['file_name']))
+        def load_im(f): return  cv2.resize(np.array(Image.open(fn)), (self.resolution, self.resolution))
+        fn = self.instances[ix]['file_name']
+        if not self.dual_input:
+            return load_im(fn)
+        pre_fn = fn.replace('post_disaster', 'pre_disaster')
+        post_fn = fn.replace('pre_disaster', 'post_disaster')
+        return load_im(pre_fn), load_im(post_fn)
         
     def get_mask(self, ix):
         polygons_by_class = [[] for _ in range(self.nclasses)]
@@ -82,33 +91,33 @@ class BuildingSegmentationDataset(torch.utils.data.Dataset):
         
     def __getitem__(self, ix):
         image = self.get_image(ix)
-        image = cv2.resize(image, (self.resolution, self.resolution))
-        
         
         mask = self.get_mask(ix)
         
-        if self.augment:
+        if self.augment and not self.dual_input:
             aug = self.augment(image=image, masks=mask)
             image, mask = aug['image'], aug['masks']
+            image = image.astype(np.float32)
+            image = self.transform_image(image)
+        
+        if self.augment and self.dual_input:
+            image_pre, image_post = image
+            aug = self.augment(image=image_pre, image_post=image_post, masks=mask)
+            image_pre, image_post, mask = aug['image'], aug['image_post'], aug['masks']
+            image = image_pre, image_post
+        
+        if self.dual_input:
+            image_pre, image_post = image
+            image_pre = self.transform_image(image_pre.astype(np.float32))
+            image_post = self.transform_image(image_post.astype(np.float32))            
+            image = np.concatenate([image_pre, image_post])
         
         mask = np.stack(mask)
         
-        if self.mode == 'ordinal':
-            for i in reversed(range(mask.shape[0])):
-                mask[:i] = np.logical_or(mask[:i], mask[i])
-
         if self.mode == 'categorical':
             mask_bool = mask.sum(0) > 0
             mask = mask.argmax(0)
             mask = mask_bool, mask
-        
-        image = image.astype(np.float32)
-        image = self.transform_image(image)
-        
-        if self.mode == "dual":
-            image_post = image_post.astype(np.float32)
-            image_post = self.transform_image(image_post)
-            image = np.concatenate([image, image_post])
         
         return image, mask
 
