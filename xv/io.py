@@ -37,6 +37,8 @@ class Config:
             for k,v in _conf.items():
                 setattr(self, k, v)
                 
+            self._items = set(_conf.keys())
+    
     def __getattr__(self, name):
         logging.warning(f"Attribute {name} not found in conf.")
         return None
@@ -49,20 +51,15 @@ def load_segmentation_model(conf, state_file=None):
         'Unet': smp.Unet
     }
     
-    model_classes = conf.nclasses
-
-    if conf.segmentation_arch == 'Unet':
-        model = segmentation_types[conf.segmentation_arch](
-            conf.encoder,
-            classes=model_classes,
-            attention_type=conf.attention
-        )
-    else: # :|
-        model = segmentation_types[conf.segmentation_arch](
-            conf.encoder,
-            classes=model_classes,
-        )
+    model_kwargs = {'classes': conf.nclasses}
+    
+    for k in {'attention_type', 'decoder_segmentation_channels', 'decoder_pyramid_channels'}:
+        try:
+            models_kwargs[k] = conf.__getattribute__(k)
+        except AttributeError:
+            continue
         
+    model = segmentation_types[conf.segmentation_arch](conf.encoder, **model_kwargs)
     
     if conf.load_weights and state_file is None:
         state_dict = torch.load(conf.load_weights)
