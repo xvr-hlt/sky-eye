@@ -60,26 +60,31 @@ def load_segmentation_model(conf, state_file=None):
             continue
         
     model = segmentation_types[conf.segmentation_arch](conf.encoder, **model_kwargs)
-    
+
+    if conf.dual_input:
+        model = DualWrapper(model, conf.dual_head_channels)
+
     if conf.load_weights and state_file is None:
         state_dict = torch.load(conf.load_weights)
         print(model.load_state_dict(state_dict))
-    
+
     if conf.freeze_encoder_norm:
-        model.encoder = FrozenBatchNorm2d.convert_frozen_batchnorm(model.encoder)
+        if conf.dual_input:
+            model._model.encoder = FrozenBatchNorm2d.convert_frozen_batchnorm(model._model.encoder)
+        else:
+            model.encoder = FrozenBatchNorm2d.convert_frozen_batchnorm(model.encoder)
 
     if conf.freeze_decoder_norm:
-        model.decoder = FrozenBatchNorm2d.convert_frozen_batchnorm(model.decoder)
+        if conf.dual_input:
+            model._model.decoder = FrozenBatchNorm2d.convert_frozen_batchnorm(model._model.decoder)
+        else:
+            model.decoder = FrozenBatchNorm2d.convert_frozen_batchnorm(model.decoder)
 
     if state_file is not None:
         state_dict = torch.load(state_file)
         print(model.load_state_dict(state_dict))
 
     preprocess_fn = get_preprocessing_fn(conf.encoder)
-    
-    if conf.dual_input:
-        model = DualWrapper(model, conf.dual_head_channels)
-    
     return model, preprocess_fn
 
 def load_damage_model(conf, state_file=None):
