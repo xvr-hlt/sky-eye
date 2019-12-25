@@ -36,11 +36,11 @@ with open(conf_file) as f:
 
 wandb.init(project=conf_init['project'], config=conf_init, name=conf_init['name'])
 
-conf = wandb.config
-pprint(dict(conf))
+conf = io.Config(conf_file)
+#pprint(dict(conf))
 
 model, preprocess_fn = io.load_segmentation_model(conf)
-    
+
 model.to('cuda')
 
 train_dataset, train_loader = io.load_training_data(conf, preprocess_fn)
