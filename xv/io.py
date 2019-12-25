@@ -58,7 +58,6 @@ def load_segmentation_model(conf, state_file=None):
             model_kwargs[k] = conf.__getattribute__(k)
         except AttributeError:
             continue
-    print(model_kwargs)
     model = segmentation_types[conf.segmentation_arch](conf.encoder, **model_kwargs)
 
     if conf.dual_input:

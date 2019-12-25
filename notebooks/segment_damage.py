@@ -93,7 +93,6 @@ for epoch in range(epoch, conf.epochs):
     metrics = {'epoch': epoch}
     train_metrics = train_fn(model, optim, train_loader, loss, train_resize=train_resize, mode=conf.mode)
     metrics.update(train_metrics)
-
     dev_metrics = eval_fn(model, dev_loader, loss, mode=conf.mode)
     metrics.update(dev_metrics)
     

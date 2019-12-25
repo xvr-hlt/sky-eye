@@ -94,23 +94,24 @@ class BuildingSegmentationDataset(torch.utils.data.Dataset):
         
         mask = self.get_mask(ix)
         
-        if self.augment and not self.dual_input:
-            aug = self.augment(image=image, masks=mask)
-            image, mask = aug['image'], aug['masks']
-            image = image.astype(np.float32)
-            image = self.transform_image(image)
-        
-        if self.augment and self.dual_input:
-            image_pre, image_post = image
-            aug = self.augment(image=image_pre, image_post=image_post, masks=mask)
-            image_pre, image_post, mask = aug['image'], aug['image_post'], aug['masks']
-            image = image_pre, image_post
-        
+        if self.augment:
+            if self.dual_input:
+                image_pre, image_post = image
+                aug = self.augment(image=image_pre, image_post=image_post, masks=mask)
+                image_pre, image_post, mask = aug['image'], aug['image_post'], aug['masks']
+                image = image_pre, image_post
+            else: 
+                aug = self.augment(image=image, masks=mask)
+                image, mask = aug['image'], aug['masks']
+                
         if self.dual_input:
             image_pre, image_post = image
             image_pre = self.transform_image(image_pre.astype(np.float32))
             image_post = self.transform_image(image_post.astype(np.float32))            
             image = np.concatenate([image_pre, image_post])
+        else:
+            image = image.astype(np.float32)
+            image = self.transform_image(image)
         
         mask = np.stack(mask)
         

@@ -64,6 +64,22 @@ def train_segment(model, optim, data, loss_fn, train_resize=None, mode=None):
         'train:loss':loss_sum/len(data)
     }
 
+@torch.no_grad()
+def evaluate_segment(model, data, loss_fn, threshold=0.5, mode=None):
+    model = model.eval()
+    tps, fps, fns, loss = 0., 0., 0., 0.
+    with torch.no_grad():
+        for image, mask in tqdm(iter(data)):
+            out = model(image.to('cuda'))
+            loss += loss_fn(out, mask.cuda())
+            tp, fp, fn = get_tp_fp_fn(out, mask, threshold)
+            tps += tp
+            fps += fp
+            fns += fn
+    metrics = {'loss': loss/len(data)}
+    metrics.update({f'building:{k}':v for k,v in get_metrics_for_counts(tps, fps, fns).items()})
+    return metrics
+
 def train_damage(model, optim, data, loss_fn, train_resize=None, mode=None):
     model = model.train()
     loss_sum = 0.
@@ -93,30 +109,16 @@ def train_damage(model, optim, data, loss_fn, train_resize=None, mode=None):
     }
 
 @torch.no_grad()
-def evaluate_segment(model, data, loss_fn, threshold=0.5, mode=None):
-    model = model.eval()
-    tps, fps, fns, loss = 0., 0., 0., 0.
-    with torch.no_grad():
-        for image, mask in tqdm(iter(data)):
-            out = model(image.to('cuda'))
-            loss += loss_fn(out, mask.cuda())
-            tp, fp, fn = get_tp_fp_fn(out, mask, threshold)
-            tps += tp
-            fps += fp
-            fns += fn
-    metrics = {'loss': loss/len(data)}
-    metrics.update({f'building:{k}':v for k,v in get_metrics_for_counts(tps, fps, fns).items()})
-    return metrics
-
-@torch.no_grad()
-def evaluate_damage(model, data, loss_fn, threshold=0.5, nclasses=4, mode=None):
+def evaluate_damage(model, data, loss_fn, threshold=0.5, mode=None):
     model = model.eval()
     metrics = {}
     loss=0.
     tps, fps, fns = defaultdict(float), defaultdict(float), defaultdict(float)
     tps_c, fps_c, fns_c = defaultdict(float), defaultdict(float), defaultdict(float)
     for image, mask in tqdm(iter(data)):
+        print(image.shape)
         outputs = model(image.cuda())
+        _, nclasses, _, _ = outputs.shape
         
         if mode == "categorical":
             mask_bool, mask = mask
