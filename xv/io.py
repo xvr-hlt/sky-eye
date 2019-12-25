@@ -53,7 +53,7 @@ def load_segmentation_model(conf, state_file=None):
     
     model_kwargs = {'classes': conf.nclasses}
     
-    for k in {'attention_type', 'decoder_segmentation_channels', 'decoder_pyramid_channels'}:
+    for k in {'attention_type', 'decoder_segmentation_channels', 'decoder_pyramid_channels', 'decoder_merge_policy'}:
         try:
             model_kwargs[k] = conf.__getattribute__(k)
         except AttributeError:
@@ -108,7 +108,6 @@ def load_damage_model(conf, state_file=None):
         print(model.load_state_dict(state_dict))
 
     return model
-
 
 def load_img(img_path, preprocess_fn):
     image = np.array(Image.open(img_path))
