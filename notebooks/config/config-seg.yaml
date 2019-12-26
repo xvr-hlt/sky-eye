@@ -23,7 +23,7 @@ filter_none: False
 mode: null
 metric: "building:f1"
 
-dual_input: True
+dual_input: False
 
 add_suppl: False
 add_tertiary: False
