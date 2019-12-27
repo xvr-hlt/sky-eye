@@ -19,6 +19,9 @@ import pdb
 import albumentations as al
 from albumentations import BboxParams
 import logging
+from xv.nn.deform import ConvOffset2D
+
+
 
 TRAIN_DIR = '../../datasets/xview/train'
 TEST_DIR = '../../datasets/xview/test'
@@ -53,12 +56,26 @@ def load_segmentation_model(conf, state_file=None):
     
     model_kwargs = {'classes': conf.nclasses}
     
-    for k in {'attention_type', 'decoder_segmentation_channels', 'decoder_pyramid_channels', 'decoder_merge_policy'}:
+    for k in {
+        'attention_type',
+        'decoder_segmentation_channels',
+        'decoder_pyramid_channels',
+        'decoder_merge_policy'}:
         try:
             model_kwargs[k] = conf.__getattribute__(k)
         except AttributeError:
             continue
     model = segmentation_types[conf.segmentation_arch](conf.encoder, **model_kwargs)
+    
+    if conf.deform_layers:
+        assert conf.segmentation_arch in ('FPN', 'Unet')
+        for layer in conf.deform_layers:
+            model_layer = getattr(model.decoder, layer)
+            dec_block = model_layer.block
+            seq = list(dec_block)
+            in_channels = seq[0].block[0].in_channels
+            seq.insert(0, ConvOffset2D(in_channels))
+            model_layer.block = nn.Sequential(*seq)
 
     if conf.dual_input:
         model = DualWrapper(model, conf.dual_head_channels)
@@ -123,7 +140,6 @@ def load_dmg_img(img_path, image_mean = (0.485, 0.456, 0.406), image_std = (0.22
     image = (image-image_mean)/image_std
     image = image.transpose(2,0,1)
     return torch.Tensor(image[None])
-
 
 def _get_augment(conf):
     return al.Compose([

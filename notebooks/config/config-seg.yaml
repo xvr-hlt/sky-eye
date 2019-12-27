@@ -9,7 +9,9 @@ training_resolution: 512
 eval_resolution: 1024
 
 segmentation_arch: Unet
-attention: scse
+attention_type: scse
+
+
 amp_opt_level: O1
 aug_prob: 0.30
 encoder: efficientnet-b7

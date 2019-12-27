@@ -116,7 +116,6 @@ def evaluate_damage(model, data, loss_fn, threshold=0.5, mode=None):
     tps, fps, fns = defaultdict(float), defaultdict(float), defaultdict(float)
     tps_c, fps_c, fns_c = defaultdict(float), defaultdict(float), defaultdict(float)
     for image, mask in tqdm(iter(data)):
-        print(image.shape)
         outputs = model(image.cuda())
         _, nclasses, _, _ = outputs.shape
         
