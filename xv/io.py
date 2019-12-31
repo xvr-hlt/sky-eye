@@ -56,6 +56,11 @@ def load_segmentation_model(conf, state_file=None):
     
     model_kwargs = {'classes': conf.nclasses}
     
+    try:
+        conf.attention_type = conf.__getattribute__('attention')
+    except AttributeError:
+        pass
+    
     for k in {
         'attention_type',
         'decoder_segmentation_channels',
