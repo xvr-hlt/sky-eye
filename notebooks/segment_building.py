@@ -33,9 +33,8 @@ with open(conf_file) as f:
 
 #os.environ['WANDB_MODE'] = 'dryrun'
 wandb.init(project=conf_init['project'], config=conf_init, name=conf_init['name'])
-conf = wandb.config
 
-pprint(dict(conf))
+conf = io.Config(conf_file)
 
 model, preprocess_fn = io.load_segmentation_model(conf)
 model.to('cuda')

@@ -39,7 +39,6 @@ class Config:
                     _conf = {k:v['value'] for k,v in _conf.items() if isinstance(v, dict) and 'value' in v}
             for k,v in _conf.items():
                 setattr(self, k, v)
-                
             self._items = set(_conf.keys())
     
     def __getattr__(self, name):
