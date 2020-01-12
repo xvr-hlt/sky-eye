@@ -4,9 +4,6 @@ from setuptools import find_packages, setup
 
 version = '0.0.1'
 
-with open('README.md', 'r', encoding='utf-8') as f:
-    readme = f.read()
-
 REQUIRES = [
     'numpy',
     'scipy',
@@ -16,14 +13,16 @@ REQUIRES = [
     'shapely',
     'ttach',
     'pandas',
-    'pytorch_toolbelt'
+    'pytorch_toolbelt',
+    'fire==0.2.1',
+    'pillow==6.2.*',
+    'imantics==0.1.11'
 ]
 
 setup(
     name='xv',
     version=version,
     description='',
-    long_description=readme,
     author='Xavier Holt',
     author_email='holt.xavier@gmail.com',
     maintainer='Xavier Holt',
@@ -31,4 +30,7 @@ setup(
     url='https://github.com/xvr-hlt/sky-eye',
     install_requires=REQUIRES,
     packages=find_packages(),
+    entry_points = {
+        'console_scripts': ['sky-eye=xv:main'],
+    }
 )

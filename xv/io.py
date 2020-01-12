@@ -22,7 +22,6 @@ import logging
 from xv.nn.deform import ConvOffset2D
 
 
-
 TRAIN_DIR = '../../datasets/xview/train'
 TEST_DIR = '../../datasets/xview/test'
 SUPPL_DIR = '../../datasets/xview/tier3'
@@ -85,7 +84,7 @@ def load_segmentation_model(conf, state_file=None):
         model = DualWrapper(model, conf.dual_head_channels)
 
     if conf.load_weights and state_file is None:
-        state_dict = torch.load(conf.load_weights)
+        state_dict = torch.load(conf.load_weights, map_location=torch.device('cpu'))
         print(model.load_state_dict(state_dict))
 
     if conf.freeze_encoder_norm:
@@ -101,7 +100,7 @@ def load_segmentation_model(conf, state_file=None):
             model.decoder = FrozenBatchNorm2d.convert_frozen_batchnorm(model.decoder)
 
     if state_file is not None:
-        state_dict = torch.load(state_file)
+        state_dict = torch.load(state_file, map_location=torch.device('cpu'))
         print(model.load_state_dict(state_dict))
 
     preprocess_fn = get_preprocessing_fn(conf.encoder)
@@ -112,7 +111,7 @@ def load_damage_model(conf, state_file=None):
     model = BoxClassifier(**conf.model_params)
         
     if conf.pretrain_weights and state_file is None:
-        state_dict = torch.load(conf.pretrain_weights)
+        state_dict = torch.load(conf.pretrain_weights, map_location=torch.device('cpu'))
         print(model.load_state_dict(state_dict))
         
     if conf.freeze_backbone_norm:
@@ -125,7 +124,7 @@ def load_damage_model(conf, state_file=None):
         model = convert_groupnorm(model)
     
     if state_file is not None:
-        state_dict = torch.load(state_file)
+        state_dict = torch.load(state_file, map_location=torch.device('cpu'))
         print(model.load_state_dict(state_dict))
 
     return model

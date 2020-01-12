@@ -2,8 +2,8 @@
 .vscode/
 *.pyc
 .ipynb_*
-*.pth
 wandb/
 *.egg-info
 submissions/
 notebooks/wandb/
+xv/models/
