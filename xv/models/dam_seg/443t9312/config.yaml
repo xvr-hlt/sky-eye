@@ -1,0 +1,126 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.8.18
+    framework: torch
+    is_jupyter_run: false
+    python_version: 3.7.5
+add_suppl:
+  desc: null
+  value: false
+add_tertiary:
+  desc: null
+  value: false
+amp_opt_level:
+  desc: null
+  value: O1
+aug_prob:
+  desc: null
+  value: 0.4
+batch_size:
+  desc: null
+  value: 6
+class_weight:
+  desc: null
+  value:
+  - 1
+  - 3
+  - 2
+  - 2
+data_prefix:
+  desc: null
+  value: post
+decoder_merge_policy:
+  desc: null
+  value: cat
+decoder_pyramid_channels:
+  desc: null
+  value: 64
+decoder_segmentation_channels:
+  desc: null
+  value: 128
+dual_head_channels:
+  desc: null
+  value: 128
+dual_input:
+  desc: null
+  value: false
+encoder:
+  desc: null
+  value: efficientnet-b2
+epochs:
+  desc: null
+  value: 100
+eval_resolution:
+  desc: null
+  value: 1024
+filter_none:
+  desc: null
+  value: true
+freeze_decoder_norm:
+  desc: null
+  value: false
+freeze_encoder_norm:
+  desc: null
+  value: false
+load_weights:
+  desc: null
+  value: false
+loss_reduce_mode:
+  desc: null
+  value: mean
+loss_weights:
+  desc: null
+  value:
+    ce: 1
+lr:
+  desc: null
+  value: 0.0005
+metric:
+  desc: null
+  value: hmean:damage:categorical:f1
+mode:
+  desc: null
+  value: categorical
+n_cpus:
+  desc: null
+  value: 10
+name:
+  desc: null
+  value: FPN-cat
+nclasses:
+  desc: null
+  value: 4
+optim:
+  desc: null
+  value: adam
+project:
+  desc: null
+  value: building-seg-damage
+scheduler_factor:
+  desc: null
+  value: 0.2
+scheduler_patience:
+  desc: null
+  value: 5
+segmentation_arch:
+  desc: null
+  value: FPN
+sync_bn:
+  desc: null
+  value: true
+train_patch:
+  desc: null
+  value: false
+train_repeat:
+  desc: null
+  value: 1
+training_resolution:
+  desc: null
+  value: 1024
+training_scales:
+  desc: null
+  value:
+  - 1.0

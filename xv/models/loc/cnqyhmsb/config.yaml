@@ -1,0 +1,105 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.8.18
+    framework: torch
+    is_jupyter_run: false
+    python_version: 3.7.5
+add_suppl:
+  desc: null
+  value: false
+add_tertiary:
+  desc: null
+  value: false
+amp_opt_level:
+  desc: null
+  value: O1
+attention:
+  desc: null
+  value: scse
+aug_prob:
+  desc: null
+  value: 0.3
+batch_size:
+  desc: null
+  value: 6
+data_prefix:
+  desc: null
+  value: pre
+encoder:
+  desc: null
+  value: efficientnet-b7
+epochs:
+  desc: null
+  value: 120
+eval_resolution:
+  desc: null
+  value: 1024
+filter_none:
+  desc: null
+  value: false
+freeze_decoder_norm:
+  desc: null
+  value: false
+freeze_encoder_norm:
+  desc: null
+  value: false
+load_weights:
+  desc: null
+  value: false
+loss_weights:
+  desc: null
+  value:
+    focal: 4
+    jaccard: 4
+lr:
+  desc: null
+  value: 0.0006
+metric:
+  desc: null
+  value: building:f1
+mode:
+  desc: null
+  value: null
+n_cpus:
+  desc: null
+  value: 8
+name:
+  desc: null
+  value: runs
+nclasses:
+  desc: null
+  value: 1
+optim:
+  desc: null
+  value: adam
+project:
+  desc: null
+  value: sky-eye-full
+scheduler_factor:
+  desc: null
+  value: 0.2
+scheduler_patience:
+  desc: null
+  value: 5
+segmentation_arch:
+  desc: null
+  value: Unet
+sync_bn:
+  desc: null
+  value: true
+train_patch:
+  desc: null
+  value: true
+train_repeat:
+  desc: null
+  value: 1
+training_resolution:
+  desc: null
+  value: 512
+training_scales:
+  desc: null
+  value:
+  - 1.0

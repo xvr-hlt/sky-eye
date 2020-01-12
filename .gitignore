@@ -6,4 +6,4 @@ wandb/
 *.egg-info
 submissions/
 notebooks/wandb/
-xv/models/
+

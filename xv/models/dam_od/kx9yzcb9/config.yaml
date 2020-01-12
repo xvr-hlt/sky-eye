@@ -1,0 +1,103 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.8.16
+    framework: torch
+    is_jupyter_run: false
+    python_version: 3.7.4
+add_suppl:
+  desc: null
+  value: false
+amp_opt_level:
+  desc: null
+  value: O1
+aug_prob:
+  desc: null
+  value: 0.35
+batch_size:
+  desc: null
+  value: 6
+class_weight:
+  desc: null
+  value:
+  - 1
+  - 3
+  - 2
+  - 2
+convert_groupnorm:
+  desc: null
+  value: false
+data_prefix:
+  desc: null
+  value: post
+epochs:
+  desc: null
+  value: 100
+filter_none:
+  desc: null
+  value: true
+freeze_backbone_norm:
+  desc: null
+  value: false
+freeze_model_norm:
+  desc: null
+  value: false
+loss_reduce_mode:
+  desc: null
+  value: mean
+loss_weights:
+  desc: null
+  value:
+    ce: 1
+lr:
+  desc: null
+  value: 0.0004
+metric:
+  desc: null
+  value: hmean:damage:categorical:f1
+min_bbox_visibility:
+  desc: null
+  value: 0.2
+model_params:
+  desc: null
+  value:
+    encoder_name: efficientnet-b3
+    features:
+    - 3
+    - 2
+    - 1
+    - 0
+    nclasses: 4
+    out_channels: 96
+name:
+  desc: null
+  value: prob35
+nclasses:
+  desc: null
+  value: 4
+optim:
+  desc: null
+  value: adam
+pretrain_weights:
+  desc: null
+  value: false
+resolution:
+  desc: null
+  value: 1024
+scheduler_factor:
+  desc: null
+  value: 0.1
+scheduler_patience:
+  desc: null
+  value: 5
+train_repeat:
+  desc: null
+  value: 1
+training_scales:
+  desc: null
+  value:
+  - 1.0
+  - 1.0
+  - 0.75
