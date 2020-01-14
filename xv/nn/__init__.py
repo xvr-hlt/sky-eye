@@ -10,7 +10,7 @@ def get_model_config(*ims):
                 'thresh': 0.2
             },
             'damage_kwargs': {
-                'damseg_ids': ['tyi7q17m','ngmxec6s', 'vrgbzaup', '443t9312', 'pxcuoulb'], # ,'xei17o3b', '10gtu54s'
+                'damseg_ids': ['tyi7q17m','ngmxec6s', 'vrgbzaup', 'xei17o3b', '10gtu54s'],#'443t9312', 'pxcuoulb'],#
                 'damod_ids': ['kx9yzcb9', 'y7n4yzya', 'c1lit0gf'],
                 'seg_mean_ag': False
             }
@@ -21,7 +21,7 @@ def get_model_config(*ims):
                 'thresh': 0.5
             },
             'damage_kwargs': {
-                'damseg_ids': ['0gvvydkt'],
+                'damseg_ids': ['hsxmom00'],# ['0gvvydkt'],
                 'damod_ids': [],
                 'seg_mean_ag': True
             }

@@ -41,7 +41,7 @@ class Config:
             self._items = set(_conf.keys())
     
     def __getattr__(self, name):
-        logging.warning(f"Attribute {name} not found in conf.")
+        logging.info(f"Attribute {name} not found in conf.")
         return None
 
 def load_segmentation_model(conf, state_file=None):
@@ -85,7 +85,7 @@ def load_segmentation_model(conf, state_file=None):
 
     if conf.load_weights and state_file is None:
         state_dict = torch.load(conf.load_weights, map_location=torch.device('cpu'))
-        print(model.load_state_dict(state_dict))
+        model.load_state_dict(state_dict)
 
     if conf.freeze_encoder_norm:
         if conf.dual_input:
@@ -101,7 +101,7 @@ def load_segmentation_model(conf, state_file=None):
 
     if state_file is not None:
         state_dict = torch.load(state_file, map_location=torch.device('cpu'))
-        print(model.load_state_dict(state_dict))
+        model.load_state_dict(state_dict)
 
     preprocess_fn = get_preprocessing_fn(conf.encoder)
     return model, preprocess_fn
@@ -112,7 +112,7 @@ def load_damage_model(conf, state_file=None):
         
     if conf.pretrain_weights and state_file is None:
         state_dict = torch.load(conf.pretrain_weights, map_location=torch.device('cpu'))
-        print(model.load_state_dict(state_dict))
+        model.load_state_dict(state_dict)
         
     if conf.freeze_backbone_norm:
         model.encoder = FrozenBatchNorm2d.convert_frozen_batchnorm(model.encoder)
@@ -125,7 +125,7 @@ def load_damage_model(conf, state_file=None):
     
     if state_file is not None:
         state_dict = torch.load(state_file, map_location=torch.device('cpu'))
-        print(model.load_state_dict(state_dict))
+        model.load_state_dict(state_dict)
 
     return model
 
