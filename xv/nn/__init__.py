@@ -3,27 +3,30 @@ from PIL import Image
 from xv import manager
 
 def get_model_config(*ims):
-    return [
+     return [
         {
-            'localization_kwargs': {
-                'run_ids': ['8bh5rurv'],
-                'thresh': 0.2
+            "localization_kwargs": {
+                "run_ids": ["8bh5rurv", "cnqyhmsb", "ri1dvvam", "ilhz9vkq"],
+                "thresh": 0.2,
             },
-            'damage_kwargs': {
-                'damseg_ids': ['tyi7q17m'],#'443t9312', 'pxcuoulb'],#
-                'damod_ids': [],
-                'seg_mean_ag': False
-            }
+            "damage_kwargs": {
+                "damseg_ids": [
+                    "tyi7q17m",
+                    "ngmxec6s",
+                    "vrgbzaup",
+                    "443t9312",
+                    "pxcuoulb",
+                ],
+                "damod_ids": ["kx9yzcb9", "y7n4yzya", "c1lit0gf"],
+                "seg_mean_ag": True,
+            },
         },
         {
-            'localization_kwargs': {
-                'run_ids': ['qoijsx0h'],
-                'thresh': 0.5
+            "localization_kwargs": {"run_ids": ["qoijsx0h"], "thresh": 0.5},
+            "damage_kwargs": {
+                "damseg_ids": ["0gvvydkt"],
+                "damod_ids": [],
+                "seg_mean_ag": True,
             },
-            'damage_kwargs': {
-                'damseg_ids': ['hsxmom00'],# ['0gvvydkt'],
-                'damod_ids': [],
-                'seg_mean_ag': True
-            }
         },
     ][categorise_image(*[Image.open(i) for i in ims])]
