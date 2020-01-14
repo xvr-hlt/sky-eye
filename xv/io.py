@@ -55,7 +55,9 @@ def load_segmentation_model(conf, state_file=None):
     model_kwargs = {'classes': conf.nclasses}
     
     try:
-        conf.attention_type = conf.__getattribute__('attention')
+        attn = conf.__getattribute__('attention')
+        if conf.segmentation_arch == "Unet":
+            conf.attention_type = attn
     except AttributeError:
         pass
     
