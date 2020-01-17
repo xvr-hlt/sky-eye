@@ -1,5 +1,5 @@
 ---
-name: runs
+name: deform
 nclasses: 1
 
 data_prefix: pre
@@ -9,7 +9,7 @@ training_resolution: 512
 eval_resolution: 1024
 
 segmentation_arch: FPN
-decoder_segmentation_channels: 512
+decoder_segmentation_channels: 480
 decoder_pyramid_channels: 256
 decoder_merge_policy: add
 deform_layers: ['s3', 's4', 's5'] # ['s2', 's3', 's4', 's5']
@@ -19,7 +19,7 @@ amp_opt_level: O1
 aug_prob: 0.30
 encoder: efficientnet-b7
 loss_weights: {jaccard: 4, focal: 4}
-lr: 0.0006 #0.0005
+lr: 0.0005 #0.0005
 optim: adam
 scheduler_factor: 0.2
 scheduler_patience: 5
@@ -40,4 +40,4 @@ freeze_decoder_norm: False
 load_weights: False
 sync_bn: True
 train_patch: True
-n_cpus: 8
+n_cpus: 4
