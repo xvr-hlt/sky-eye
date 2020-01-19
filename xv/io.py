@@ -65,7 +65,8 @@ def load_segmentation_model(conf, state_file=None):
         'attention_type',
         'decoder_segmentation_channels',
         'decoder_pyramid_channels',
-        'decoder_merge_policy'}:
+        'decoder_merge_policy',
+        'decoder_channels'}:
         try:
             model_kwargs[k] = conf.__getattribute__(k)
         except AttributeError:

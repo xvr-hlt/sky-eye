@@ -1,5 +1,5 @@
 ---
-name: deform
+name: big-unet
 nclasses: 1
 
 data_prefix: pre
@@ -9,16 +9,18 @@ training_resolution: 512
 eval_resolution: 1024
 
 segmentation_arch: Unet
-attention_type: scse
+
+#attention_type: scse
 #decoder_segmentation_channels: 480
 #decoder_pyramid_channels: 256
 #decoder_merge_policy: add
 #deform_layers: ['s3', 's4', 's5'] # ['s2', 's3', 's4', 's5']
-deform_layers: ['layer1', 'layer2', 'layer3'] #, 'layer4']
+# deform_layers: ['layer1', 'layer2', 'layer3']
+decoder_channels: [512, 256, 256, 96, 96]
 
 amp_opt_level: O1
 aug_prob: 0.30
-encoder: efficientnet-b6
+encoder: efficientnet-b7
 loss_weights: {jaccard: 4, focal: 4}
 lr: 0.0005 #0.0005
 optim: adam
